@@ -1,145 +1,119 @@
 """
-Example: Research Assistant Workflow
+Example: Research Assistant using LangGraph + Amplifier@next
 
-Demonstrates mixing deterministic and agentic steps with zero external dependencies.
+Demonstrates the 10% glue: Making Amplifier agents work as LangGraph nodes.
 
-Workflow:
-1. Load documents (deterministic)
-2. Analyze with Amplifier agent (agentic)
-3. Format report (deterministic)
+LangGraph handles: Workflow orchestration, state management, persistence
+Amplifier handles: Agent intelligence, memory, checkpointing
+AmpBox provides: The bridge between them (AmplifierNode)
 """
 
 import asyncio
-import sys
-from pathlib import Path
+from typing import TypedDict
 
-# Add Amplifier to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent / "amplifier"))
-
-from ampbox import SimpleWorkflow
-from ampbox import WorkflowState
+from ampbox import AmplifierNode
+from langgraph.graph import END
+from langgraph.graph import StateGraph
 
 
-async def research_workflow(docs_path: str = "research_docs"):
-    """
-    Simple research assistant that analyzes documents and creates a report.
+class ResearchState(TypedDict):
+    """Workflow state schema - LangGraph manages this"""
 
-    Args:
-        docs_path: Directory containing markdown documents to analyze
-    """
-    workflow = SimpleWorkflow("research_assistant")
+    documents: list[str]
+    doc_count: int
+    themes: str
+    report: str
 
-    # ========== Step 1: Load Documents (Deterministic) ==========
-    async def load_documents(state: WorkflowState) -> None:
-        """Load all markdown files from directory"""
-        docs_dir = Path(docs_path)
 
-        if not docs_dir.exists():
-            # Create sample docs if directory doesn't exist
-            docs_dir.mkdir(parents=True, exist_ok=True)
-            (docs_dir / "sample1.md").write_text(
-                "# AI Agents\n\nAI agents are autonomous systems that can plan and execute tasks."
-            )
-            (docs_dir / "sample2.md").write_text(
-                "# Workflows\n\nWorkflows orchestrate steps - both deterministic and agentic."
-            )
+async def load_documents(state: ResearchState) -> ResearchState:
+    """Deterministic step: Load documents"""
+    from pathlib import Path
 
-        # Load all markdown files
-        files = list(docs_dir.glob("*.md"))
-        documents = [f.read_text() for f in files]
+    docs_dir = Path("research_docs")
+    if not docs_dir.exists():
+        docs_dir.mkdir(parents=True)
+        (docs_dir / "sample1.md").write_text("# AI Agents\n\nAgents that can plan and execute.")
+        (docs_dir / "sample2.md").write_text("# Workflows\n\nOrchestrate deterministic + agentic steps.")
 
-        state.set("documents", documents)
-        state.set("doc_count", len(files))
-        state.set("doc_files", [str(f) for f in files])
+    files = list(docs_dir.glob("*.md"))
+    documents = [f.read_text() for f in files]
 
-        print(f"  Loaded {len(files)} documents")
+    return {
+        **state,
+        "documents": documents,
+        "doc_count": len(files),
+    }
 
-    # ========== Step 2: Analyze (Agentic - Amplifier Agent) ==========
-    async def analyze_with_agent(state: WorkflowState) -> None:
-        """
-        Analyze documents using simple keyword extraction.
 
-        Future: Will integrate Amplifier@next agents for deeper analysis.
-        Current: Proves workflow orchestration with working analysis.
-        """
-        documents = state.get("documents", [])
-        doc_count = state.get("doc_count", 0)
+async def format_report(state: ResearchState) -> ResearchState:
+    """Deterministic step: Format final report"""
+    from pathlib import Path
 
-        # Simple keyword-based theme extraction (working implementation)
-        all_text = " ".join(documents).lower()
+    themes = state.get("themes", "No themes")
+    doc_count = state.get("doc_count", 0)
 
-        # Extract common themes (simple word frequency)
-        keywords = ["agent", "workflow", "orchestration", "state", "execution", "plan", "task"]
-        found_themes = [kw for kw in keywords if kw in all_text]
+    report = f"""# Research Report
 
-        themes = "\n".join(
-            f"{i + 1}. {theme.capitalize()}-based patterns found in documents"
-            for i, theme in enumerate(found_themes[:5])
-        )
-
-        if not themes:
-            themes = "General content analysis - no specific technical themes identified"
-
-        state.set("themes", themes)
-        state.set("themes_count", len(found_themes))
-        state.set("analysis_complete", True)
-
-        print(f"  Analyzed {doc_count} documents")
-        print(f"  Identified {len(found_themes)} theme areas")
-
-    # ========== Step 3: Format Report (Deterministic) ==========
-    async def format_report(state: WorkflowState) -> None:
-        """Generate final report from analysis"""
-        themes = state.get("themes", "No themes found")
-        doc_count = state.get("doc_count", 0)
-        doc_files = state.get("doc_files", [])
-
-        report = f"""# Research Report
-
-**Generated:** {state.get("_started_at", "Unknown")}
-**Documents Analyzed:** {doc_count}
-
-## Source Documents
-{chr(10).join(f"- {Path(f).name}" for f in doc_files)}
+Documents Analyzed: {doc_count}
 
 ## Key Themes
 
 {themes}
 
 ---
-*Generated by AmpBox POC - Zero external dependencies*
+Generated by AmpBox: LangGraph + Amplifier@next
 """
 
-        state.set("report", report)
+    Path("research_report.md").write_text(report)
 
-        # Save report to file
-        output_file = Path("research_report.md")
-        output_file.write_text(report)
+    return {
+        **state,
+        "report": report,
+    }
 
-        print(f"  Report saved to {output_file}")
-        print(f"  Report length: {len(report)} characters")
 
-    # ========== Build and Run Workflow ==========
-    workflow.add_step("load_documents", load_documents)
-    workflow.add_step("analyze_with_agent", analyze_with_agent)
-    workflow.add_step("format_report", format_report)
+async def research_workflow() -> dict:
+    """
+    Example workflow using LangGraph + Amplifier.
 
-    # Execute
-    final_state = await workflow.run()
+    Workflow:
+    1. Load documents (deterministic - simple Python function)
+    2. Analyze (agentic - Amplifier@next agent via AmplifierNode)
+    3. Format report (deterministic - simple Python function)
 
-    # Show results
-    print("\n" + "=" * 50)
-    print("WORKFLOW RESULTS")
-    print("=" * 50)
-    print(f"Documents: {final_state.get('doc_count')}")
-    print(f"Themes extracted: {final_state.get('themes', '').count(chr(10)) + 1}")
-    print("Report: research_report.md")
-    print("State saved: .ampbox_state/research_assistant_latest.json")
-    print()
+    LangGraph handles: Orchestration, state, checkpointing
+    Amplifier handles: Intelligence
+    AmpBox provides: The bridge (AmplifierNode)
+    """
+    # Create LangGraph workflow
+    workflow = StateGraph(ResearchState)
 
-    return final_state
+    # Add nodes (deterministic and agentic)
+    workflow.add_node("load", load_documents)
+    workflow.add_node(
+        "analyze",
+        AmplifierNode(agent_name="research_analyzer", task="Extract key themes from documents"),  # type: ignore[arg-type]
+    )
+    workflow.add_node("format", format_report)
+
+    # Define flow
+    workflow.set_entry_point("load")
+    workflow.add_edge("load", "analyze")
+    workflow.add_edge("analyze", "format")
+    workflow.add_edge("format", END)
+
+    # Compile and run
+    app = workflow.compile()
+    result = await app.ainvoke({"documents": [], "doc_count": 0, "themes": "", "report": ""})
+
+    return result
 
 
 if __name__ == "__main__":
-    # Run the workflow
-    asyncio.run(research_workflow())
+    print("🚀 Running research workflow (LangGraph + Amplifier)\n")
+    result = asyncio.run(research_workflow())
+
+    print("\n✅ Workflow complete!")
+    print(f"Documents: {result['doc_count']}")
+    print("Report: research_report.md")
+    print(f"State: {len(str(result))} bytes")

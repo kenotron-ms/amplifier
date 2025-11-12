@@ -1,138 +1,157 @@
 # AmpBox POC - Summary
 
 **Date:** November 12, 2025
-**Status:** ✅ Working
-**Dependencies:** 0 external (only Python stdlib + Amplifier@next)
-**Lines of Code:** ~150 total
+**Status:** ✅ Working - Using LangGraph (Not Reinventing)
+**Dependencies:** 1 (LangGraph)
+**Lines of Custom Code:** ~50 (just the bridge)
 
 ---
 
 ## What We Proved
 
-**Thesis:** Can orchestrate workflows mixing deterministic + agentic steps with ZERO external dependencies.
+**Thesis:** AmpBox's value is the integration glue, not reinventing workflow engines.
 
 **Result:** ✅ **VALIDATED**
 
-### Working Implementation:
+### The Correct Approach:
 
-**SimpleWorkflow orchestrator:**
-- ~100 lines of code
-- Sequential execution
-- State passing between steps
-- JSON checkpoint persistence
-- Zero dependencies beyond stdlib
+**Use LangGraph (don't reinvent):**
+- Workflow orchestration ✅
+- State management ✅
+- Checkpointing ✅
+- Graph visualization ✅
+- Conditional branching ✅
+- Parallel execution ✅
+- **We maintain: 0 lines**
 
-**Example workflow:**
-1. Load documents (deterministic) → 2. Analyze (agentic) → 3. Format report (deterministic)
+**Build AmplifierNode (the 10% glue):**
+- Makes Amplifier@next agents work as LangGraph nodes
+- ~50 lines of bridge code
+- **We maintain: 50 lines**
 
-**Output:**
-- research_report.md (generated report)
-- .ampbox_state/*.json (state checkpoints)
+**Total custom code: ~50 lines** (not 150+)
 
 ---
 
 ## Key Learnings
 
-### **1. We Don't Need Complex Workflow Engines Yet**
+### **1. Don't Reinvent What Exists**
 
-**Before:** Thought we needed LangGraph, Temporal, or n8n
-**After:** Simple Python functions + state dict is sufficient
-**When to upgrade:** If we need conditional branching, parallel execution, or graph visualization
+**MISTAKE:** Initially built SimpleWorkflow (~100 LOC)
+- Reimplemented state management
+- Reimplemented checkpointing
+- Reimplemented orchestration
+- **All things LangGraph already does!**
 
-### **2. JSON is Fine for State**
+**CORRECT:** Use LangGraph, write only the bridge
+- LangGraph handles workflows (proven library)
+- Amplifier handles agents (proven framework)
+- AmplifierNode bridges them (~50 LOC)
 
-**Before:** Thought we needed SQLite or PocketBase
-**After:** JSON files work perfectly for single workflow
-**When to upgrade:** If state > 1MB, need queries, or multiple workflows share data
+**Lesson:** "Library-first" means USE libraries, not avoid them to minimize dependencies.
 
-### **3. The Integration Glue is Tiny**
+### **2. Every Line We Write is Maintenance**
 
-**What we wrote:**
-- workflow.py (100 LOC) - orchestrator
-- research_assistant.py (50 LOC) - example
+**Custom workflow engine:** 100+ LOC we maintain forever
+**LangGraph dependency:** 0 LOC we maintain (community maintains it)
 
-**Total: 150 lines proves the concept**
+**The trade:** 1 dependency to manage < 100 lines of code to maintain
 
-**This validates:** AmpBox is about minimal glue, not building platforms
+### **3. The Real Value is Integration**
+
+**What we don't build:**
+- ❌ Workflow engines (LangGraph)
+- ❌ State management (LangGraph)
+- ❌ Agent frameworks (Amplifier)
+
+**What we DO build:**
+- ✅ AmplifierNode (makes them work together)
+- ✅ Patterns and conventions
+- ✅ Examples and documentation
+
+**This is the 10% that makes 90% work together.**
 
 ---
 
-## What's Missing (Intentionally)
+## The Dependency Philosophy (Corrected)
 
-**Not included yet because we don't need them:**
-- ❌ LangGraph (workflow library)
-- ❌ SQLite (database)
-- ❌ FastAPI (web interface)
-- ❌ PocketBase (services)
-- ❌ Tauri (desktop packaging)
-- ❌ Auth (not needed for single-user local)
-- ❌ MCP infrastructure (no external services yet)
+**WRONG:** "Minimize all dependencies"
+- Led to reinventing LangGraph
+- Created maintenance burden
+- Missed the point
 
-**Will add when:**
-- Pain proves necessity
-- Simple approach fails
-- Real users demand features
+**RIGHT:** "Minimize dependencies on SERVICES, use LIBRARIES wisely"
+- Services require lifecycle management (PocketBase, Temporal, Docker)
+- Libraries are just imports (LangGraph, SQLAlchemy)
+- **Libraries < Services in complexity**
+
+**When to use libraries:**
+- ✅ Solves our exact problem (LangGraph for workflows)
+- ✅ Well-maintained (LangChain team)
+- ✅ Saves us maintaining code
+- ✅ Provides more features than we'd build
+
+**When to avoid services:**
+- ❌ Adds operational complexity
+- ❌ Requires lifecycle management
+- ❌ Until libraries prove insufficient
+
+---
+
+## Corrected Architecture
+
+**Tier 1: Always**
+- Amplifier@next (why we exist)
+- Python stdlib
+
+**Tier 2: Use Proven Libraries (Low Cost)**
+- LangGraph (workflows) ✅ **NOW**
+- SQLAlchemy (if need ORM)
+- FastAPI (if need web API)
+
+**Tier 3: Avoid Services Until Necessary (High Cost)**
+- PocketBase (wait until auth+DB+realtime needed)
+- Temporal (wait until LangGraph insufficient)
+- Docker services (wait until required)
+
+**The insight:** Libraries ≠ Services in maintenance cost.
 
 ---
 
 ## Next Steps
 
-### **Option A: Stop Here (Validate with Users)**
-- Share this POC with Amplifier developers
-- Ask: "Would you use this to orchestrate your agents?"
-- Learn what they actually need
-- **Build nothing else until validated**
+### **Immediate:**
+1. Enhance AmplifierNode to call real Amplifier@next agents
+2. Test bidirectional integration (agents in workflows, workflows in agents)
+3. Validate with real use case
 
-### **Option B: Add Real Amplifier Integration**
-- Replace keyword extraction with real Amplifier@next agent
-- Prove bidirectional integration works
-- Still zero external dependencies
+### **When Proven Valuable:**
+4. Add FastAPI if web interface needed
+5. Add SQLite if state grows large
+6. Add MCP infrastructure if external services needed
 
-### **Option C: Add ONE More Feature**
-- Maybe: Simple CLI (`ampbox run research_assistant`)
-- Maybe: Multiple workflow support
-- **Only if Option A shows clear need**
+### **Much Later:**
+7. Services only when libraries fail
+8. Desktop packaging only when users demand it
 
 ---
 
-## The Philosophy Validated
+## The Corrected Thesis
 
-**"Start with simplest thing that could work"** ✅
+**"Use excellent libraries. Build only the integration glue."**
 
-We proved that AmpBox doesn't need:
-- Complex architecture
-- Many dependencies
-- External services
-- Weeks of integration
+**AmpBox = AmplifierNode (50 LOC) + Patterns + Documentation**
 
-**It needs:**
-- ~150 lines of glue code
-- Clear conventions
-- Working end-to-end
-
-**This is the foundation.** Everything else is optional until proven necessary.
+Not a platform. Not a framework. Just the bridge that makes Amplifier + LangGraph work together seamlessly.
 
 ---
 
 ## Metrics
 
-**Time to POC:** ~90 minutes
-**Dependencies added:** 0
-**Lines of code:** 150
-**Functionality:** Complete workflow orchestration
+**Time to POC:** 2 hours (including the detour through SimpleWorkflow)
+**Dependencies added:** 1 (LangGraph)
+**Lines of custom code:** ~50 (AmplifierNode)
+**Functionality:** Complete workflow orchestration (via LangGraph)
+**Maintenance burden:** Minimal (bridge only)
 
-**Developer experience:**
-- Clone repo
-- Run `python -m ampbox.examples.research_assistant`
-- See report generated
-- **Time to first run: < 1 minute**
-
----
-
-## Recommendation
-
-**Ship this POC to private fork. Get feedback. Build nothing else until users tell us what's missing.**
-
-The value of AmpBox might not be "integration platform" but rather "simple patterns for orchestrating Amplifier agents."
-
-Let users tell us what they actually need.
+**Learning:** Don't reinvent workflow engines when LangGraph exists. Build the bridge, not the world.

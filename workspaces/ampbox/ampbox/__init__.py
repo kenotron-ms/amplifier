@@ -1,11 +1,11 @@
 """
 AmpBox: Integrated Runtime for AI Agents
 
-Minimal proof-of-concept - zero external dependencies beyond Amplifier@next.
-Philosophy: Start simple, add complexity only when simplicity fails.
+The 10% glue: Makes Amplifier@next agents work seamlessly with LangGraph.
+
+Philosophy: Use libraries (LangGraph), don't reinvent. Build only the integration.
 """
 
-from ampbox.workflow import SimpleWorkflow
-from ampbox.workflow import WorkflowState
+from ampbox.amplifier_node import AmplifierNode
 
-__all__ = ["SimpleWorkflow", "WorkflowState"]
+__all__ = ["AmplifierNode"]

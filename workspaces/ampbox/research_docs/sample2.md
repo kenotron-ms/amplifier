@@ -1,3 +1,3 @@
 # Workflows
 
-Workflows orchestrate steps - both deterministic and agentic.
+Orchestrate deterministic + agentic steps.

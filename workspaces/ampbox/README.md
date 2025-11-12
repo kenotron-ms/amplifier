@@ -1,29 +1,45 @@
-# AmpBox: Minimal POC
+# AmpBox: The 10% Glue
 
-**Zero external dependencies. Just Amplifier@next + Python stdlib.**
+**Don't reinvent. Use LangGraph for workflows. Build only the Amplifier integration.**
 
 ## Philosophy
 
-Start with the simplest thing that could work. Add complexity only when simplicity fails.
+**Use libraries (LangGraph), don't reinvent workflows.**
 
 **Current dependencies:**
+- LangGraph (workflow orchestration - proven, maintained)
 - Amplifier@next (from /Users/ken/amplifier)
-- Python stdlib (json, pathlib, asyncio)
-- **Total: 0 new dependencies**
+- **Total: 1 dependency**
 
 ## What This Proves
 
-That we can orchestrate workflows mixing:
-- Deterministic steps (Python functions)
-- Agentic steps (Amplifier@next agents)
+That AmpBox's value is the **integration**, not reinventing wheels.
 
-Without adding workflow engines, databases, or services.
+**LangGraph provides:**
+- Workflow orchestration ✅
+- State management ✅
+- Checkpointing ✅
+- Graph visualization ✅
+- Conditional branching ✅
+- Parallel execution ✅
+
+**Amplifier@next provides:**
+- Deep agents ✅
+- Memory system ✅
+- Checkpointing ✅
+
+**AmpBox provides:**
+- The bridge (AmplifierNode) ✅
+- Makes them work together ✅
+
+**We maintain:** ~50 lines of bridge code (not 100s of lines of workflow engine)
 
 ## Usage
 
 ```bash
-# From workspace root
+# Install dependencies
 cd workspaces/ampbox
+uv pip install -e .
 
 # Run example workflow
 python -m ampbox.examples.research_assistant
@@ -31,39 +47,23 @@ python -m ampbox.examples.research_assistant
 
 ## How It Works
 
-**SimpleWorkflow:**
-- Runs async Python functions in sequence
-- Passes `WorkflowState` dict between steps
-- Saves JSON checkpoint after each step
-- ~100 lines of code, zero dependencies
+**AmplifierNode:**
+- Wrapper that makes Amplifier agents work as LangGraph nodes
+- ~50 lines of code
+- The ONLY custom code we write
 
-**Example workflow:**
-1. Load documents (deterministic)
-2. Analyze with Amplifier agent (agentic)
-3. Format report (deterministic)
+**Example workflow (using LangGraph):**
+```
+StateGraph(ResearchState)
+  ├─ load (deterministic function)
+  ├─ analyze (AmplifierNode - Amplifier agent)
+  └─ format (deterministic function)
+```
 
-**State persists to:** `.ampbox_state/<workflow_name>_latest.json`
-
-## When to Add Complexity
-
-**Add LangGraph when:**
-- Conditional branching gets messy
-- Need parallel execution
-- Graph visualization would help
-
-**Add SQLite when:**
-- JSON files > 1MB
-- Need to query state
-- Multiple workflows share data
-
-**Add services when:**
-- Libraries can't handle the complexity
-- Pain is proven, not hypothetical
-
-**Until then: Keep it simple.**
+**LangGraph handles everything else** (execution, state, persistence, visualization)
 
 ## Files
 
-- `ampbox/workflow.py` - Core orchestrator (~100 LOC)
-- `ampbox/examples/research_assistant.py` - Example usage
-- `.ampbox_state/` - State checkpoints (JSON files)
+- `ampbox/amplifier_node.py` - The 10% glue (~50 LOC)
+- `ampbox/examples/research_assistant.py` - Example using LangGraph
+- State managed by LangGraph (not our code)

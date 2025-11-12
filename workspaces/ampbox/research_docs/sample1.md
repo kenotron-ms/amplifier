@@ -1,3 +1,3 @@
 # AI Agents
 
-AI agents are autonomous systems that can plan and execute tasks.
+Agents that can plan and execute.
