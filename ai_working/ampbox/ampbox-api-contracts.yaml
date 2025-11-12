@@ -1,0 +1,1826 @@
+openapi: 3.1.0
+info:
+  title: AmpBox Platform API
+  version: 1.0.0
+  description: |
+    Infrastructure-as-a-box platform centered around agent runtime capabilities.
+    
+    ## Philosophy
+    - RESTful design with ruthless simplicity
+    - Clear resource naming, proper HTTP methods
+    - Consistent error patterns across all endpoints
+    - Real-time streaming via SSE for agent output
+    - Stateless API Gateway design
+    
+    ## Authentication
+    All endpoints (except /auth/login) require authentication via:
+    - Bearer token in Authorization header, OR
+    - API key in X-API-Key header
+    
+    ## Error Response Format
+    All errors follow this standard structure:
+    ```json
+    {
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Human-readable error message",
+        "details": {}
+      }
+    }
+    ```
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development
+  - url: https://ampbox.example.com/api/v1
+    description: Production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              example: "AGENT_SESSION_NOT_FOUND"
+            message:
+              type: string
+              description: Human-readable error message
+              example: "Agent session abc123 not found"
+            details:
+              type: object
+              description: Additional error context
+              additionalProperties: true
+
+    # Agent Runtime Schemas
+    AgentSession:
+      type: object
+      required:
+        - session_id
+        - agent_id
+        - status
+        - created_at
+      properties:
+        session_id:
+          type: string
+          format: uuid
+          description: Unique session identifier
+        agent_id:
+          type: string
+          description: Agent configuration identifier
+        workspace_id:
+          type: string
+          description: Associated workspace
+        status:
+          type: string
+          enum: [pending, running, completed, failed, terminated]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CreateAgentSessionRequest:
+      type: object
+      required:
+        - agent_id
+      properties:
+        agent_id:
+          type: string
+          description: Agent configuration to use
+        workspace_id:
+          type: string
+          description: Workspace context for session
+        initial_context:
+          type: object
+          description: Initial context data for agent
+          additionalProperties: true
+
+    ExecuteTaskRequest:
+      type: object
+      required:
+        - task
+      properties:
+        task:
+          type: string
+          description: Task description for agent to execute
+          example: "Analyze the codebase and suggest improvements"
+        context:
+          type: object
+          description: Additional context for task execution
+          additionalProperties: true
+
+    TaskExecution:
+      type: object
+      required:
+        - task_id
+        - session_id
+        - status
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        result:
+          type: object
+          description: Task execution result
+          additionalProperties: true
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    # VFS Schemas
+    VFSFile:
+      type: object
+      required:
+        - path
+        - type
+      properties:
+        path:
+          type: string
+          description: File path in VFS
+          example: "/workspace/src/main.py"
+        type:
+          type: string
+          enum: [file, directory]
+        size:
+          type: integer
+          description: File size in bytes
+        modified_at:
+          type: string
+          format: date-time
+        layer:
+          type: string
+          description: VFS layer providing this file
+        metadata:
+          type: object
+          additionalProperties: true
+
+    WriteFileRequest:
+      type: object
+      required:
+        - path
+        - content
+      properties:
+        path:
+          type: string
+          description: Target file path
+        content:
+          type: string
+          description: File content (base64 for binary)
+        encoding:
+          type: string
+          enum: [utf-8, base64]
+          default: utf-8
+
+    MountLayerRequest:
+      type: object
+      required:
+        - layer_id
+        - mount_point
+      properties:
+        layer_id:
+          type: string
+          description: Layer identifier to mount
+        mount_point:
+          type: string
+          description: VFS path to mount at
+          example: "/workspace"
+        priority:
+          type: integer
+          description: Layer priority (higher = checked first)
+          default: 0
+
+    VFSLayer:
+      type: object
+      required:
+        - layer_id
+        - mount_point
+      properties:
+        layer_id:
+          type: string
+        mount_point:
+          type: string
+        priority:
+          type: integer
+        mounted_at:
+          type: string
+          format: date-time
+
+    # Auth Schemas
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+        refresh_token:
+          type: string
+          description: Refresh token for obtaining new access token
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          description: Token lifetime in seconds
+
+    CreateAPIKeyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Human-readable name for API key
+        expires_at:
+          type: string
+          format: date-time
+          description: Optional expiration date
+
+    APIKey:
+      type: object
+      required:
+        - key_id
+        - name
+        - created_at
+      properties:
+        key_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        key:
+          type: string
+          description: API key value (only returned on creation)
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+
+    # Storage Schemas
+    UploadFileRequest:
+      type: object
+      required:
+        - file
+        - path
+      properties:
+        file:
+          type: string
+          format: binary
+        path:
+          type: string
+          description: Storage path for file
+
+    StorageFile:
+      type: object
+      required:
+        - file_id
+        - path
+        - size
+      properties:
+        file_id:
+          type: string
+          format: uuid
+        path:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+        content_type:
+          type: string
+        uploaded_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    # Workspace Schemas
+    Workspace:
+      type: object
+      required:
+        - workspace_id
+        - name
+        - owner_id
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        owner_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateWorkspaceRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    ShareWorkspaceRequest:
+      type: object
+      required:
+        - user_id
+        - permissions
+      properties:
+        user_id:
+          type: string
+          description: User to share with
+        permissions:
+          type: array
+          items:
+            type: string
+            enum: [read, write, execute, admin]
+
+    # Agent Config Schemas
+    AgentConfig:
+      type: object
+      required:
+        - agent_id
+        - name
+        - model
+      properties:
+        agent_id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        model:
+          type: string
+          description: LLM model identifier
+          example: "claude-3-5-sonnet-20241022"
+        system_prompt:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          description: Additional agent configuration
+          additionalProperties: true
+
+    CreateAgentConfigRequest:
+      type: object
+      required:
+        - name
+        - model
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        model:
+          type: string
+        system_prompt:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          additionalProperties: true
+
+    # System Schemas
+    SystemStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        version:
+          type: string
+        uptime:
+          type: integer
+          description: Uptime in seconds
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [up, down, degraded]
+              message:
+                type: string
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+paths:
+  # ============================================================================
+  # Agent Runtime API
+  # ============================================================================
+  
+  /agent/sessions:
+    post:
+      summary: Create agent session
+      description: |
+        Create a new agent execution session. Sessions provide isolated
+        runtime environments for agent tasks.
+      tags:
+        - Agent Runtime
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentSessionRequest'
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSession'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent config not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List agent sessions
+      description: List all agent sessions for the authenticated user
+      tags:
+        - Agent Runtime
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, terminated]
+          description: Filter by session status
+        - name: agent_id
+          in: query
+          schema:
+            type: string
+          description: Filter by agent config
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgentSession'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+
+  /agent/sessions/{session_id}:
+    get:
+      summary: Get session status
+      description: Retrieve current status and details of an agent session
+      tags:
+        - Agent Runtime
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentSession'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Terminate session
+      description: |
+        Terminate a running agent session. Completed or failed sessions
+        cannot be terminated.
+      tags:
+        - Agent Runtime
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session terminated successfully
+        '400':
+          description: Cannot terminate session in current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /agent/sessions/{session_id}/tasks:
+    post:
+      summary: Execute task in session
+      description: |
+        Submit a task for execution within an agent session.
+        Returns task_id immediately; use SSE endpoint to stream output.
+      tags:
+        - Agent Runtime
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteTaskRequest'
+      responses:
+        '202':
+          description: Task accepted for execution
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskExecution'
+        '400':
+          description: Invalid task request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /agent/sessions/{session_id}/stream:
+    get:
+      summary: Stream agent output (SSE)
+      description: |
+        Server-Sent Events stream for real-time agent output.
+        
+        Event types:
+        - `task_started`: Task execution began
+        - `output`: Agent generated output
+        - `tool_call`: Agent invoked a tool
+        - `task_completed`: Task finished successfully
+        - `task_failed`: Task failed with error
+        - `session_terminated`: Session was terminated
+        
+        Example:
+        ```
+        event: output
+        data: {"text": "Analyzing codebase...", "timestamp": "2024-01-15T10:30:00Z"}
+        
+        event: tool_call
+        data: {"tool": "list_files", "args": {"path": "/src"}}
+        ```
+      tags:
+        - Agent Runtime
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '404':
+          description: Session not found
+
+  # ============================================================================
+  # Virtual Filesystem API
+  # ============================================================================
+
+  /vfs/files:
+    get:
+      summary: Read file
+      description: Read file content from VFS
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+          description: File path to read
+          example: "/workspace/src/main.py"
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Write file
+      description: Write or update file in VFS
+      tags:
+        - VFS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WriteFileRequest'
+      responses:
+        '201':
+          description: File written successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VFSFile'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete file
+      description: Delete file from VFS
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: File deleted successfully
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vfs/files/stats:
+    get:
+      summary: Get file stats
+      description: Retrieve file metadata and statistics
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VFSFile'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vfs/files/resolve:
+    get:
+      summary: Resolve file path
+      description: |
+        Show which VFS layer provides a file. Useful for debugging
+        layer precedence and understanding file origins.
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File resolution details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  layer:
+                    type: string
+                  layers_checked:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: File not found in any layer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vfs/directories:
+    get:
+      summary: List directory
+      description: List files and subdirectories in a VFS directory
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "/workspace/src"
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Recursively list subdirectories
+      responses:
+        '200':
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  path:
+                    type: string
+                  entries:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VFSFile'
+        '404':
+          description: Directory not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vfs/layers:
+    post:
+      summary: Mount layer
+      description: |
+        Mount a VFS layer at specified mount point with given priority.
+        Higher priority layers are checked first during file resolution.
+      tags:
+        - VFS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MountLayerRequest'
+      responses:
+        '201':
+          description: Layer mounted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VFSLayer'
+        '400':
+          description: Invalid mount request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Layer already mounted at this path
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List mounted layers
+      description: List all currently mounted VFS layers
+      tags:
+        - VFS
+      responses:
+        '200':
+          description: List of mounted layers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  layers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VFSLayer'
+
+  /vfs/layers/{layer_id}:
+    delete:
+      summary: Unmount layer
+      description: Unmount a VFS layer
+      tags:
+        - VFS
+      parameters:
+        - name: layer_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Layer unmounted successfully
+        '404':
+          description: Layer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /vfs/snapshots:
+    post:
+      summary: Create snapshot
+      description: |
+        Create a snapshot of current VFS state. Snapshots capture
+        the current state of all layers for backup or versioning.
+      tags:
+        - VFS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  snapshot_id:
+                    type: string
+                  name:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+
+  /vfs/watch:
+    get:
+      summary: Watch file changes (SSE)
+      description: |
+        Server-Sent Events stream for file change notifications.
+        
+        Event types:
+        - `file_created`: New file created
+        - `file_modified`: File content changed
+        - `file_deleted`: File removed
+        - `directory_created`: New directory created
+        - `directory_deleted`: Directory removed
+      tags:
+        - VFS
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+          description: Path to watch (defaults to root)
+        - name: recursive
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: Watch subdirectories recursively
+      responses:
+        '200':
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  # ============================================================================
+  # Auth Service API
+  # ============================================================================
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate user and receive access token
+      tags:
+        - Auth
+      security: []  # No auth required for login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Invalidate current access token
+      tags:
+        - Auth
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      description: Obtain new access token using refresh token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify:
+    post:
+      summary: Verify token
+      description: Verify if current token is valid
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  user_id:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+        '401':
+          description: Token is invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/keys:
+    post:
+      summary: Create API key
+      description: Create a new API key for programmatic access
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIKeyRequest'
+      responses:
+        '201':
+          description: API key created (key value only shown once)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKey'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List API keys
+      description: List all API keys for authenticated user
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/APIKey'
+
+  /auth/keys/{key_id}:
+    delete:
+      summary: Revoke API key
+      description: Revoke an API key (cannot be undone)
+      tags:
+        - Auth
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: API key revoked
+        '404':
+          description: API key not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Storage Service API
+  # ============================================================================
+
+  /storage/files:
+    post:
+      summary: Upload file
+      description: Upload file to object storage
+      tags:
+        - Storage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageFile'
+        '400':
+          description: Invalid upload request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List files
+      description: List files in storage with optional path filtering
+      tags:
+        - Storage
+      parameters:
+        - name: path
+          in: query
+          schema:
+            type: string
+          description: Filter by path prefix
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of files
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageFile'
+                  total:
+                    type: integer
+
+  /storage/files/{file_id}:
+    get:
+      summary: Download file
+      description: Download file from storage
+      tags:
+        - Storage
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete file
+      description: Delete file from storage
+      tags:
+        - Storage
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: File deleted successfully
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /storage/files/{file_id}/metadata:
+    get:
+      summary: Get file metadata
+      description: Retrieve file metadata without downloading content
+      tags:
+        - Storage
+      parameters:
+        - name: file_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageFile'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Workspace Management API
+  # ============================================================================
+
+  /workspaces:
+    post:
+      summary: Create workspace
+      description: Create a new workspace
+      tags:
+        - Workspaces
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkspaceRequest'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List workspaces
+      description: List all workspaces accessible to authenticated user
+      tags:
+        - Workspaces
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  workspaces:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workspace'
+                  total:
+                    type: integer
+
+  /workspaces/{workspace_id}:
+    get:
+      summary: Get workspace info
+      description: Retrieve workspace details
+      tags:
+        - Workspaces
+      parameters:
+        - name: workspace_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '404':
+          description: Workspace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete workspace
+      description: Delete workspace and all associated data
+      tags:
+        - Workspaces
+      parameters:
+        - name: workspace_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workspace deleted
+        '404':
+          description: Workspace not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /workspaces/{workspace_id}/share:
+    post:
+      summary: Share workspace
+      description: Grant workspace access to another user
+      tags:
+        - Workspaces
+      parameters:
+        - name: workspace_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShareWorkspaceRequest'
+      responses:
+        '200':
+          description: Workspace shared successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Agent Management API
+  # ============================================================================
+
+  /agents:
+    post:
+      summary: Create agent config
+      description: Create new agent configuration
+      tags:
+        - Agent Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentConfigRequest'
+      responses:
+        '201':
+          description: Agent config created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    get:
+      summary: List agent configs
+      description: List all agent configurations for authenticated user
+      tags:
+        - Agent Management
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of agent configs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  agents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AgentConfig'
+                  total:
+                    type: integer
+
+  /agents/{agent_id}:
+    get:
+      summary: Get agent config details
+      description: Retrieve agent configuration details
+      tags:
+        - Agent Management
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agent config details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '404':
+          description: Agent config not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update agent config
+      description: Update existing agent configuration
+      tags:
+        - Agent Management
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentConfigRequest'
+      responses:
+        '200':
+          description: Agent config updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+        '404':
+          description: Agent config not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete agent config
+      description: Delete agent configuration
+      tags:
+        - Agent Management
+      parameters:
+        - name: agent_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Agent config deleted
+        '404':
+          description: Agent config not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Admin/System API
+  # ============================================================================
+
+  /system/status:
+    get:
+      summary: Get system status
+      description: Retrieve overall system health and status
+      tags:
+        - System
+      security: []  # Public endpoint
+      responses:
+        '200':
+          description: System status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  /admin/users:
+    get:
+      summary: List all users (admin only)
+      description: List all users in the system
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        user_id:
+                          type: string
+                        username:
+                          type: string
+                        email:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+                  total:
+                    type: integer
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /admin/tenants:
+    get:
+      summary: List tenants (multi-tenant mode)
+      description: List all tenants in multi-tenant deployment
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of tenants
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tenants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tenant_id:
+                          type: string
+                        name:
+                          type: string
+                        created_at:
+                          type: string
+                          format: date-time
+        '403':
+          description: Insufficient permissions
+
+  /admin/logs:
+    get:
+      summary: View system logs
+      description: Retrieve system logs with filtering
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [debug, info, warning, error]
+        - name: service
+          in: query
+          schema:
+            type: string
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Log entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        timestamp:
+                          type: string
+                          format: date-time
+                        level:
+                          type: string
+                        service:
+                          type: string
+                        message:
+                          type: string
+                        context:
+                          type: object
+        '403':
+          description: Insufficient permissions
+
+  /admin/metrics:
+    get:
+      summary: Get system metrics
+      description: Retrieve system performance metrics
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: System metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cpu_usage:
+                    type: number
+                  memory_usage:
+                    type: number
+                  disk_usage:
+                    type: number
+                  active_sessions:
+                    type: integer
+                  requests_per_minute:
+                    type: number
+        '403':
+          description: Insufficient permissions
+
+tags:
+  - name: Agent Runtime
+    description: Manage agent sessions and task execution
+  - name: VFS
+    description: Virtual filesystem operations
+  - name: Auth
+    description: Authentication and authorization
+  - name: Storage
+    description: Object storage management
+  - name: Workspaces
+    description: Workspace management
+  - name: Agent Management
+    description: Agent configuration management
+  - name: System
+    description: System status and health
+  - name: Admin
+    description: Administrative operations
