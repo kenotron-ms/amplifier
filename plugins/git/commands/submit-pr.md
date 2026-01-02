@@ -607,7 +607,7 @@ CRITICAL RULES:
    cd "$PROJECT_DIR"
 
    # Use git ls-files to find tracked documentation
-   DOCS=$(git ls-files '*.md' | grep -iE '(contributing|maintenance|claude)\.md$')
+   DOCS=$(git ls-files '*.md' | grep -iE 'contributing|maintenance|claude' | grep '\.md$')
 
    if [[ -z "$DOCS" ]]; then
      echo "📋 No documentation standards found (CONTRIBUTING.md, MAINTENANCE.md, CLAUDE.md)"
