@@ -74,6 +74,12 @@ This will:
 
 This automates the complete PR workflow from start to finish with **ZERO user prompts**:
 
+**Progress tracking:**
+- **TodoWrite integration** - Visual progress tracking throughout the workflow
+- Shows current step and completion status for each phase
+- Clear visibility into long-running operations
+- Easier debugging when issues occur
+
 **Smart branch handling:**
 - Automatically creates a feature branch if you're on main/master
 - Prevents accidental commits to base branch
@@ -86,6 +92,7 @@ This automates the complete PR workflow from start to finish with **ZERO user pr
   - Runs required checks (linting, testing, type checking)
   - Generates/updates auto-generated files
   - Blocks PR submission if compliance fails
+  - **Parallel execution** - Documentation compliance and PR standards discovery run simultaneously for faster performance
 
 **PR creation and auto-merge:**
 - Pushes your branch to remote

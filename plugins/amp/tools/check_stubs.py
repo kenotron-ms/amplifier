@@ -12,13 +12,23 @@ except ImportError:
     try:
         import tomli as tomllib
     except ImportError:
-        print("Warning: Cannot read pyproject.toml (install tomli for Python <3.11)", file=sys.stderr)
+        print(
+            "Warning: Cannot read pyproject.toml (install tomli for Python <3.11)",
+            file=sys.stderr,
+        )
         tomllib = None
 
 
 def read_pyproject_exclusions():
     """Read exclude patterns from pyproject.toml."""
-    default_excludes = {".venv", "__pycache__", ".git", "node_modules", ".tox", "templates"}
+    default_excludes = {
+        ".venv",
+        "__pycache__",
+        ".git",
+        "node_modules",
+        ".tox",
+        "templates",
+    }
 
     if not tomllib or not Path("pyproject.toml").exists():
         return default_excludes
@@ -87,7 +97,10 @@ def is_legitimate_pattern(filepath, line_num, line):
                 if line_num > 1:
                     # Check for @abstractmethod decorator
                     for i in range(max(0, line_num - 3), line_num):
-                        if "@abstractmethod" in lines[i] or "@abc.abstractmethod" in lines[i]:
+                        if (
+                            "@abstractmethod" in lines[i]
+                            or "@abc.abstractmethod" in lines[i]
+                        ):
                             return True
         except Exception:
             pass
@@ -99,7 +112,8 @@ def is_legitimate_pattern(filepath, line_num, line):
                 content = f.read()
                 # Simple check for Protocol usage
                 if "Protocol" in content and (
-                    "from typing import Protocol" in content or "from typing_extensions import Protocol" in content
+                    "from typing import Protocol" in content
+                    or "from typing_extensions import Protocol" in content
                 ):
                     # Could be a protocol definition
                     return True
@@ -155,7 +169,9 @@ def check_file(filepath):
 
     for line_num, line in enumerate(lines, 1):
         for pattern, desc in STUB_PATTERNS:
-            if re.search(pattern, line, re.IGNORECASE) and not is_legitimate_pattern(filepath, line_num, line):
+            if re.search(pattern, line, re.IGNORECASE) and not is_legitimate_pattern(
+                filepath, line_num, line
+            ):
                 violations.append((filepath, line_num, desc, line.strip()))
 
     return violations
