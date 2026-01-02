@@ -9,7 +9,7 @@ Complete end-to-end PR workflow: automatically creates branches, commits changes
 **🎯 Smart Standards Discovery**: This command automatically discovers and follows repository-specific PR standards by reading documentation files (`CONTRIBUTING.md`, `MAINTENANCE.md`, `CLAUDE.md`). It ensures all documentation is updated and all required steps are completed before creating the PR.
 
 **✨ Full Lifecycle Automation**:
-- **Auto-branch**: Creates feature branch if on main/master
+- **Auto-branch**: Creates feature branch if on target branch (e.g., main, master, or custom target)
 - **Auto-monitor**: Watches PR checks and approval status in real-time
 - **Smart merge**: Uses GitHub auto-merge when available, otherwise merges manually when checks pass
 - **Auto-cleanup**: Cleans up branches after merge completes
@@ -96,7 +96,12 @@ if [[ -f ".git-pr-config.json" ]]; then
     FORBIDDEN_BRANCHES=$(jq -r '.rules.forbidden_base_branches[]' .git-pr-config.json 2>/dev/null)
 
     # Determine the base branch this PR would target
-    if git rev-parse --verify origin/main >/dev/null 2>&1; then
+    # First check if config specifies target_branch
+    TARGET_BRANCH=$(jq -r '.remote.target_branch // empty' .git-pr-config.json 2>/dev/null)
+    if [[ -n "$TARGET_BRANCH" ]] && git rev-parse --verify origin/"$TARGET_BRANCH" >/dev/null 2>&1; then
+      DETECTED_BASE="$TARGET_BRANCH"
+      echo "🎯 Target branch from config: $DETECTED_BASE"
+    elif git rev-parse --verify origin/main >/dev/null 2>&1; then
       DETECTED_BASE="main"
     elif git rev-parse --verify origin/master >/dev/null 2>&1; then
       DETECTED_BASE="master"
@@ -162,17 +167,32 @@ echo "Current branch: $CURRENT_BRANCH"
 
 **Check and handle branches:**
 
-1. **If on `main` or `master` branch, automatically create a feature branch:**
+1. **If on target branch, automatically create a feature branch:**
    ```bash
    cd "$PROJECT_DIR"
    CURRENT_BRANCH=$(git branch --show-current)
 
-   if [[ "$CURRENT_BRANCH" == "main" || "$CURRENT_BRANCH" == "master" ]]; then
+   # Determine target branch from config or defaults
+   TARGET_BRANCH=""
+   if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
+     TARGET_BRANCH=$(jq -r '.remote.target_branch // empty' .git-pr-config.json 2>/dev/null)
+   fi
+
+   # Fallback to main/master if no config
+   if [[ -z "$TARGET_BRANCH" ]]; then
+     if git rev-parse --verify origin/main >/dev/null 2>&1; then
+       TARGET_BRANCH="main"
+     elif git rev-parse --verify origin/master >/dev/null 2>&1; then
+       TARGET_BRANCH="master"
+     fi
+   fi
+
+   if [[ "$CURRENT_BRANCH" == "$TARGET_BRANCH" ]]; then
      # Generate a branch name based on changes
      # Analyze git diff to understand what changed
      # Create a descriptive branch name like: feature/add-user-auth, fix/login-bug, etc.
 
-     echo "📌 Currently on $CURRENT_BRANCH - creating feature branch..."
+     echo "📌 Currently on $CURRENT_BRANCH (target branch) - creating feature branch..."
 
      # Generate branch name from changes (you should analyze the diff)
      BRANCH_NAME="feature/$(date +%Y%m%d-%H%M%S)"  # Fallback if can't determine from diff
@@ -219,11 +239,11 @@ If there are uncommitted changes:
    ```bash
    cd "$PROJECT_DIR"
 
-   # Check if .git-pr-config.json specifies a working branch
+   # Check if .git-pr-config.json specifies a target branch
    if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
-     WORKING_BRANCH=$(jq -r '.remote.working_branch // empty' .git-pr-config.json 2>/dev/null)
-     if [[ -n "$WORKING_BRANCH" ]] && git rev-parse --verify origin/"$WORKING_BRANCH" >/dev/null 2>&1; then
-       BASE_BRANCH="$WORKING_BRANCH"
+     TARGET_BRANCH=$(jq -r '.remote.target_branch // empty' .git-pr-config.json 2>/dev/null)
+     if [[ -n "$TARGET_BRANCH" ]] && git rev-parse --verify origin/"$TARGET_BRANCH" >/dev/null 2>&1; then
+       BASE_BRANCH="$TARGET_BRANCH"
        echo "📌 Base branch (from config): $BASE_BRANCH"
      fi
    fi
