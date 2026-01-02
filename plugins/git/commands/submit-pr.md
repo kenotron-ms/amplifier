@@ -20,17 +20,35 @@ Complete end-to-end PR workflow: automatically creates branches, commits changes
 
 The commands will use `PROJECT_DIR` environment variable if set, otherwise fall back to the current directory (`$PWD`).
 
-**At the start of this command, set PROJECT_DIR:**
+**At the start of this command, set PROJECT_DIR and PR_REPO:**
 ```bash
 # Use PROJECT_DIR if set, otherwise use current directory
 PROJECT_DIR="${PROJECT_DIR:-$PWD}"
 echo "Working in: $PROJECT_DIR"
+
+# Check for .git-pr-config.json to prevent accidental upstream PRs
+if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
+  PR_REPO=$(jq -r '.remote.origin // empty' .git-pr-config.json 2>/dev/null)
+  if [[ -n "$PR_REPO" ]]; then
+    echo "🎯 PR target repository: $PR_REPO"
+    REPO_FLAG="--repo $PR_REPO"
+  else
+    REPO_FLAG=""
+  fi
+else
+  REPO_FLAG=""
+fi
 ```
 
 **Then for all git commands, use:**
 ```bash
 cd "$PROJECT_DIR"
 git <command>
+```
+
+**For all gh pr commands, use:**
+```bash
+gh pr <subcommand> $REPO_FLAG [other args]
 ```
 
 ## Workflow
@@ -171,17 +189,27 @@ If there are uncommitted changes:
    ```bash
    cd "$PROJECT_DIR"
 
-   # Determine if this repo uses main or master
-   if git rev-parse --verify origin/main >/dev/null 2>&1; then
-     BASE_BRANCH="main"
-   elif git rev-parse --verify origin/master >/dev/null 2>&1; then
-     BASE_BRANCH="master"
-   else
-     echo "❌ Cannot determine base branch (neither main nor master exists)"
-     exit 1
+   # Check if .git-pr-config.json specifies a working branch
+   if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
+     WORKING_BRANCH=$(jq -r '.remote.working_branch // empty' .git-pr-config.json 2>/dev/null)
+     if [[ -n "$WORKING_BRANCH" ]] && git rev-parse --verify origin/"$WORKING_BRANCH" >/dev/null 2>&1; then
+       BASE_BRANCH="$WORKING_BRANCH"
+       echo "📌 Base branch (from config): $BASE_BRANCH"
+     fi
    fi
 
-   echo "📌 Base branch: $BASE_BRANCH"
+   # If not set from config, auto-detect
+   if [[ -z "$BASE_BRANCH" ]]; then
+     if git rev-parse --verify origin/main >/dev/null 2>&1; then
+       BASE_BRANCH="main"
+     elif git rev-parse --verify origin/master >/dev/null 2>&1; then
+       BASE_BRANCH="master"
+     else
+       echo "❌ Cannot determine base branch"
+       exit 1
+     fi
+     echo "📌 Base branch (auto-detected): $BASE_BRANCH"
+   fi
    ```
 
 2. **Fetch latest changes from remote:**
@@ -606,7 +634,7 @@ Before creating the PR, discover repository-specific PR title and description st
 2. **Analyze recent PRs for patterns:**
    ```bash
    cd "$PROJECT_DIR"
-   gh pr list --state merged --limit 5 --json title,body
+   gh pr list $REPO_FLAG --state merged --limit 5 --json title,body
    ```
 
    Look for:
@@ -619,7 +647,7 @@ Before creating the PR, discover repository-specific PR title and description st
 1. Check if a PR already exists for this branch:
    ```bash
    cd "$PROJECT_DIR"
-   gh pr view --json number,url 2>/dev/null || echo "No existing PR"
+   gh pr view $REPO_FLAG --json number,url 2>/dev/null || echo "No existing PR"
    ```
 
 2. If no PR exists, create one automatically **following discovered standards**:
@@ -633,14 +661,14 @@ Before creating the PR, discover repository-specific PR title and description st
    - Maintain the tone and style consistent with the repo's standards
    - Create the PR and **attempt to enable auto-merge**:
      ```bash
-     # Create PR
-     gh pr create --title "PR_TITLE" --body "PR_BODY"
+     # Create PR (BASE_BRANCH should be set from Step 3)
+     gh pr create $REPO_FLAG --base "$BASE_BRANCH" --title "PR_TITLE" --body "PR_BODY"
 
      # Try to enable auto-merge (may fail if not enabled in repo)
-     PR_NUMBER=$(gh pr view --json number -q .number)
+     PR_NUMBER=$(gh pr view $REPO_FLAG --json number -q .number)
      AUTO_MERGE_ENABLED=false
 
-     if gh pr merge "$PR_NUMBER" --auto --merge 2>/dev/null; then
+     if gh pr merge "$PR_NUMBER" $REPO_FLAG --auto --merge 2>/dev/null; then
        echo "✅ Auto-merge enabled - PR will merge automatically when approved and checks pass"
        AUTO_MERGE_ENABLED=true
      else
@@ -655,9 +683,9 @@ Before creating the PR, discover repository-specific PR title and description st
 
 3. If PR exists, check if auto-merge is already enabled, enable it if not:
    ```bash
-   AUTO_MERGE=$(gh pr view --json autoMergeRequest -q .autoMergeRequest)
+   AUTO_MERGE=$(gh pr view $REPO_FLAG --json autoMergeRequest -q .autoMergeRequest)
    if [[ "$AUTO_MERGE" == "null" ]]; then
-     gh pr merge --auto --merge 2>/dev/null && echo "✅ Auto-merge enabled"
+     gh pr merge $REPO_FLAG --auto --merge 2>/dev/null && echo "✅ Auto-merge enabled"
    fi
    ```
 
@@ -679,10 +707,10 @@ After PR creation, IMMEDIATELY begin monitoring the PR status by repeatedly chec
 
 **How to monitor**:
 
-1. Use `gh pr view [PR_NUMBER] --json state,statusCheckRollup,reviewDecision,mergeable,comments` to check status
+1. Use `gh pr view [PR_NUMBER] $REPO_FLAG --json state,statusCheckRollup,reviewDecision,mergeable,comments` to check status
 2. Check for new comments since last check:
    - Track the number of comments from previous check
-   - If comment count increased, fetch and display new comments: `gh pr view [PR_NUMBER] --json comments`
+   - If comment count increased, fetch and display new comments: `gh pr view [PR_NUMBER] $REPO_FLAG --json comments`
    - Report new comments to user (reviewer name, timestamp, comment body)
 3. Display the current status clearly when it changes (not every check)
 4. Wait 30 seconds using Bash `sleep 30` command
