@@ -101,9 +101,7 @@ def match_pattern(path: str, pattern: str, component_matching=False) -> bool:
                 return fnmatch.fnmatch(os.path.basename(abs_path), pattern_file)
             return False  # Not under the pattern directory
         # Direct file match
-        return abs_path == resolved_pattern or fnmatch.fnmatch(
-            abs_path, resolved_pattern
-        )
+        return abs_path == resolved_pattern or fnmatch.fnmatch(abs_path, resolved_pattern)
     # Regular pattern without navigation, use relative path matching
     return fnmatch.fnmatch(path, pattern)
 
@@ -112,10 +110,7 @@ def should_exclude(path: str, exclude_patterns: list[str]) -> bool:
     """
     Returns True if any component of the path matches an exclude pattern.
     """
-    return any(
-        match_pattern(path, pattern, component_matching=True)
-        for pattern in exclude_patterns
-    )
+    return any(match_pattern(path, pattern, component_matching=True) for pattern in exclude_patterns)
 
 
 def should_include(path: str, include_patterns: list[str]) -> bool:
@@ -126,9 +121,7 @@ def should_include(path: str, include_patterns: list[str]) -> bool:
     return any(match_pattern(path, pattern) for pattern in include_patterns)
 
 
-def collect_files(
-    patterns: list[str], exclude_patterns: list[str], include_patterns: list[str]
-) -> list[str]:
+def collect_files(patterns: list[str], exclude_patterns: list[str], include_patterns: list[str]) -> list[str]:
     """
     Collects file paths matching the given patterns, applying exclusion first.
     Files that match an include pattern are added back in.
@@ -186,9 +179,7 @@ def process_file(
     rel_path = os.path.relpath(file_path)
 
     # Skip if excluded and not specifically included
-    if should_exclude(rel_path, exclude_patterns) and not should_include(
-        rel_path, include_patterns
-    ):
+    if should_exclude(rel_path, exclude_patterns) and not should_include(rel_path, include_patterns):
         return
 
     collected.add(abs_path)
@@ -347,9 +338,7 @@ def main() -> None:
     files = collect_files(patterns, exclude_patterns, include_patterns)
 
     # Format and print output
-    output = format_output(
-        files, args.format, exclude_patterns, include_patterns, patterns
-    )
+    output = format_output(files, args.format, exclude_patterns, include_patterns, patterns)
     print(output)
 
 

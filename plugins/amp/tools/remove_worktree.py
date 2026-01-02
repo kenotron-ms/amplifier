@@ -77,9 +77,7 @@ def run_git_command(cmd: list[str]) -> tuple[int, str, str]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Remove a git worktree and optionally delete its branch"
-    )
+    parser = argparse.ArgumentParser(description="Remove a git worktree and optionally delete its branch")
     parser.add_argument(
         "branch",
         help="Name of the branch/worktree to remove, or '.' for current worktree",
@@ -106,9 +104,7 @@ def main():
             sys.exit(1)
 
         # User wants to remove current worktree
-        print(
-            f"⚠️  WARNING: You are about to remove the current worktree '{current_branch}'"
-        )
+        print(f"⚠️  WARNING: You are about to remove the current worktree '{current_branch}'")
         print("Your current directory will be deleted after this operation.")
         print("You will need to navigate to a valid directory afterwards.\n")
 
@@ -125,9 +121,7 @@ def main():
             print("❌ Error: Could not determine main repository path.")
             sys.exit(1)
 
-        print(
-            f"⚠️  WARNING: You are removing the worktree you're currently in '{current_branch}'"
-        )
+        print(f"⚠️  WARNING: You are removing the worktree you're currently in '{current_branch}'")
         print("Your current directory will be deleted after this operation.\n")
 
         # Change to main repo to perform the removal
@@ -165,9 +159,7 @@ def main():
 
     worktree_exists = str(worktree_path) in stdout
     if not worktree_exists:
-        print(
-            f"Error: Worktree for branch '{args.branch}' not found at {worktree_path}"
-        )
+        print(f"Error: Worktree for branch '{args.branch}' not found at {worktree_path}")
         sys.exit(1)
 
     # Remove the worktree
@@ -180,9 +172,7 @@ def main():
 
     if returncode != 0:
         if "contains modified or untracked files" in stderr:
-            print(
-                "Error: Worktree contains uncommitted changes. Use --force to override."
-            )
+            print("Error: Worktree contains uncommitted changes. Use --force to override.")
         else:
             print(f"Error removing worktree: {stderr}")
         sys.exit(1)
@@ -206,9 +196,7 @@ def main():
     elif "not fully merged" in stderr:
         # Try force delete if regular delete fails due to unmerged changes
         print("Branch has unmerged changes, force deleting...")
-        returncode, stdout, stderr = run_git_command(
-            ["git", "branch", "-D", args.branch]
-        )
+        returncode, stdout, stderr = run_git_command(["git", "branch", "-D", args.branch])
         if returncode == 0:
             print(f"Successfully force-deleted branch '{args.branch}'")
         else:

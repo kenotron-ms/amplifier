@@ -89,9 +89,7 @@ class ImageGenerator:
         logger.info(f"Total generation cost: ${self.total_cost:.2f}")
         return results
 
-    async def _generate_alternatives(
-        self, prompt: ImagePrompt, index: int
-    ) -> ImageAlternatives | None:
+    async def _generate_alternatives(self, prompt: ImagePrompt, index: int) -> ImageAlternatives | None:
         """Generate images from multiple APIs for one prompt.
 
         Args:
@@ -145,9 +143,7 @@ class ImageGenerator:
             selection_reason="First successfully generated image",
         )
 
-    async def _generate_single(
-        self, client, api_name: str, prompt: ImagePrompt, output_path: Path
-    ) -> GeneratedImage:
+    async def _generate_single(self, client, api_name: str, prompt: ImagePrompt, output_path: Path) -> GeneratedImage:
         """Generate a single image from one API.
 
         Args:
@@ -168,9 +164,7 @@ class ImageGenerator:
             url, cost = await client.generate(
                 prompt=prompt.full_prompt,
                 output_path=output_path,
-                params={
-                    "quality": "standard"
-                },  # Use standard quality for cost efficiency
+                params={"quality": "standard"},  # Use standard quality for cost efficiency
             )
 
             return GeneratedImage(

@@ -51,9 +51,7 @@ async def get_user_feedback_async(draft_path: Path) -> tuple[str, str | None]:
     feedback, comment_count = await _extract_bracketed_feedback(draft_path)
 
     if feedback:
-        logger.info(
-            f"📋 Found {comment_count} bracketed {'comment' if comment_count == 1 else 'comments'}"
-        )
+        logger.info(f"📋 Found {comment_count} bracketed {'comment' if comment_count == 1 else 'comments'}")
     else:
         logger.info("ℹ️ No bracketed comments found")
 

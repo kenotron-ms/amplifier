@@ -6,11 +6,11 @@ Test script to verify audio caching functionality.
 import tempfile
 from pathlib import Path
 
-from amplifier.utils.logger import get_logger
-
 # Import the components we need to test
 from scenarios.transcribe.storage import TranscriptStorage
 from scenarios.transcribe.video_loader import VideoLoader
+
+from amplifier.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -45,9 +45,7 @@ def test_cache_functionality():
         logger.info("Test 2: Testing save_audio with file already in place...")
         existing_audio = output_dir / "audio.mp3"
         saved_again = storage.save_audio(existing_audio, output_dir)
-        assert saved_again == existing_audio, (
-            "Should return same path if already in place"
-        )
+        assert saved_again == existing_audio, "Should return same path if already in place"
         logger.info("✓ save_audio handles existing files correctly")
 
         # Test 3: Test video loader cache detection (mock test)
@@ -65,12 +63,8 @@ def test_cache_functionality():
         import inspect
 
         sig = inspect.signature(loader.download_audio)
-        assert "use_cache" in sig.parameters, (
-            "download_audio should have use_cache parameter"
-        )
-        assert sig.parameters["use_cache"].default is True, (
-            "use_cache should default to True"
-        )
+        assert "use_cache" in sig.parameters, "download_audio should have use_cache parameter"
+        assert sig.parameters["use_cache"].default is True, "use_cache should default to True"
         logger.info("✓ VideoLoader has cache detection implemented")
 
         # Test 4: Verify JSON metadata includes audio info

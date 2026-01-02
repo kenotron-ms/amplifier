@@ -46,9 +46,7 @@ def ensure_not_in_worktree():
             print("❌ Error: Cannot create worktrees from within a worktree.")
             print("\nPlease run this command from the main repository:")
             print(f"  cd {main_repo}")
-            print(
-                f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}"
-            )
+            print(f"  make worktree {sys.argv[1] if len(sys.argv) > 1 else '<branch-name>'}")
             sys.exit(1)
     except subprocess.CalledProcessError:
         # Not in a git repository at all
@@ -243,9 +241,7 @@ def main():
         except (subprocess.CalledProcessError, FileNotFoundError):
             # Fallback to cp, quietly in eval mode
             try:
-                run_command(
-                    ["cp", "-r", str(data_dir), str(worktree_path)], eval_mode=eval_mode
-                )
+                run_command(["cp", "-r", str(data_dir), str(worktree_path)], eval_mode=eval_mode)
                 if not eval_mode:
                     print("Data copy complete!")
             except subprocess.CalledProcessError as e:
@@ -260,9 +256,7 @@ def main():
         # Being evaluated - output shell commands
         if venv_created:
             # Output commands to change directory and activate venv
-            print(
-                f"cd {worktree_path} && source .venv/bin/activate && echo '\n✓ Switched to worktree: {feature_name}'"
-            )
+            print(f"cd {worktree_path} && source .venv/bin/activate && echo '\n✓ Switched to worktree: {feature_name}'")
         else:
             # Just change directory if venv wasn't created
             print(
