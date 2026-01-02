@@ -67,3 +67,5 @@ ai_working/tmp
 # Smoke test runtime logs
 .smoke_test_data/data
 *.log.jsonl
+# PR Safety: DO NOT create PRs to main/master
+.git-pr-config.json

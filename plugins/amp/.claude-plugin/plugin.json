@@ -1,0 +1,21 @@
+{
+  "name": "amp",
+  "version": "1.0.0",
+  "description": "Amplifier development philosophy, universal agents, and workflows for AI-assisted development",
+  "author": {
+    "name": "Ken Chau",
+    "email": "kchau@microsoft.com"
+  },
+  "homepage": "https://github.com/kenotron-ms/amplifier",
+  "repository": "https://github.com/kenotron-ms/amplifier",
+  "license": "MIT",
+  "keywords": [
+    "amplifier",
+    "philosophy",
+    "modular-design",
+    "agents",
+    "workflows",
+    "development",
+    "ai-assisted"
+  ]
+}

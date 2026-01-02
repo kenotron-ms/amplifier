@@ -1,0 +1,61 @@
+{
+  "name": "amplifier",
+  "owner": {
+    "name": "Ken Chau",
+    "email": "kchau@microsoft.com"
+  },
+  "metadata": {
+    "description": "Amplifier development configurations, workflows, and philosophy for AI-assisted development",
+    "homepage": "https://github.com/kenotron-ms/amplifier"
+  },
+  "plugins": [
+    {
+      "name": "amp",
+      "source": "./plugins/amp",
+      "description": "Amplifier development philosophy, universal agents, and workflows",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ken Chau",
+        "email": "kchau@microsoft.com"
+      },
+      "keywords": [
+        "amplifier",
+        "philosophy",
+        "modular-design",
+        "agents",
+        "workflows"
+      ]
+    },
+    {
+      "name": "git",
+      "source": "./plugins/git",
+      "description": "Git workflow helpers for creating PRs and syncing branches with intelligent conflict resolution",
+      "version": "1.0.0",
+      "author": {
+        "name": "kenotron-ms"
+      },
+      "keywords": [
+        "git",
+        "workflow",
+        "pull-request",
+        "version-control"
+      ]
+    },
+    {
+      "name": "dev-kit",
+      "source": "./plugins/dev-kit",
+      "description": "Software Development Lifecycle toolkit with commands for feature development, bug fixes, and engineering workflows",
+      "version": "0.1.0",
+      "author": {
+        "name": "johannao76"
+      },
+      "keywords": [
+        "sdlc",
+        "feature",
+        "development",
+        "workflow",
+        "engineering"
+      ]
+    }
+  ]
+}

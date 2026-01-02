@@ -1,17 +1,8 @@
 {
   "mcpServers": {
-    "browser-use": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "browser-use"
-      ]
-    },
     "playwright": {
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ]
+      "args": ["@playwright/mcp@latest"]
     },
     "context7": {
       "command": "npx",
@@ -24,14 +15,6 @@
     "repomix": {
       "command": "npx",
       "args": ["-y", "repomix", "--mcp"]
-    },
-    "zen": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/BeehiveInnovations/zen-mcp-server.git",
-        "zen-mcp-server"
-      ]
     }
   }
 }

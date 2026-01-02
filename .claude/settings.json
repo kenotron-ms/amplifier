@@ -9,13 +9,7 @@
     ],
     "deny": [],
     "defaultMode": "bypassPermissions",
-    "additionalDirectories": [
-      ".data",
-      ".vscode",
-      ".claude",
-      ".ai",
-      "~/amplifier"
-    ]
+    "additionalDirectories": [".data", ".vscode", ".claude", ".ai"]
   },
   "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": ["playwright", "deepwiki"],
@@ -104,5 +98,18 @@
         ]
       }
     ]
+  },
+  "extraKnownMarketplaces": {
+    "amplifier": {
+      "source": {
+        "source": "directory",
+        "path": "."
+      }
+    }
+  },
+  "enabledPlugins": {
+    "amp@amplifier": true,
+    "git@amplifier": true,
+    "dev-kit@amplifier": true
   }
 }

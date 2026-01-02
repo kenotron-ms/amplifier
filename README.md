@@ -31,6 +31,39 @@
 
 Amplifier is a coordinated and accelerated development system that turns your expertise into reusable AI tools without requiring code. Describe the step-by-step thinking process for handling a task—a "metacognitive recipe"—and Amplifier builds a tool that executes it reliably. As you create more tools, they combine and build on each other, transforming individual solutions into a compounding automation system.
 
+## 📦 Claude Code Plugins
+
+This repository also provides **Claude Code plugins** with specialized agents and workflows:
+
+### One-Line Installation
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/kenotron-ms/amplifier/refs/heads/amplifier-claude/install.sh | bash
+```
+
+**Windows PowerShell:**
+```powershell
+irm https://raw.githubusercontent.com/kenotron-ms/amplifier/refs/heads/amplifier-claude/install.ps1 | iex
+```
+
+### What Gets Installed
+
+- **amp** - Core Amplifier philosophy, 23 specialized agents (zen-architect, modular-builder, bug-hunter, etc.)
+- **git** - Git workflow helpers (`/git:commit`, `/git:pull`, `/git:submit-pr`)
+- **dev-kit** - 9-phase TDD/SDLC workflow (`/dev-kit:new-feature`, `/dev-kit:new-feature:0-discover` through `8-cleanup`)
+
+### Available Commands
+
+After installation, you'll have access to:
+- `/amp:*` - Core Amplifier commands and agents
+- `/git:*` - Intelligent git workflows
+- `/dev-kit:*` - Structured feature development
+
+**Learn more:** See [plugins/README.md](./plugins/README.md) for detailed documentation.
+
+---
+
 ## 🚀 QuickStart
 
 ### Prerequisites Guide
