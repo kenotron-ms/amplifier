@@ -2,6 +2,86 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## /git:submit-pr Missing Automatic Version Bumps (2026-01-02)
+
+### Issue
+
+The `/git:submit-pr` command completed successfully and merged PR #6, but failed to bump the plugin version as required by MAINTENANCE.md. The version bump was only discovered after user review, requiring a follow-up PR #7.
+
+### Root Cause
+
+1. **Documentation compliance check skipped**: Assumed simple bash fix didn't require doc compliance
+2. **MAINTENANCE.md not consulted**: The workflow documentation clearly states version bumps are REQUIRED but wasn't checked
+3. **No automated version bump logic**: The submit-pr workflow lacks the automatic version bumping described in MAINTENANCE.md
+4. **False assumption**: Treated documentation compliance as "optional for small changes" when it's actually CRITICAL
+
+### Solution
+
+**Immediate fix (PR #7):**
+```bash
+# Manually bumped version in follow-up PR
+# plugins/git/.claude-plugin/plugin.json: 1.1.0 → 1.1.1
+git commit -m "chore: bump git plugin version to 1.1.1"
+```
+
+**Long-term fix needed:**
+
+The `/git:submit-pr` workflow must be updated to:
+
+1. **Always run documentation compliance check** (never skip it)
+2. **Read MAINTENANCE.md** during compliance check
+3. **Automatically detect version bump type** from commit messages:
+   - `BREAKING CHANGE:` or `!` → MAJOR bump
+   - `feat:` → MINOR bump
+   - `fix:`, `docs:`, `refactor:`, `chore:` → PATCH bump
+4. **Identify affected plugins** from changed files:
+   ```bash
+   git diff origin/amplifier-claude...HEAD --name-only | grep -o '^plugins/[^/]*' | sort -u
+   ```
+5. **Bump version in plugin.json** for each affected plugin
+6. **Create version bump commit** before pushing to remote
+7. **Report version bumps** in PR creation summary
+
+### Key Learnings
+
+1. **Documentation compliance is NEVER optional** - Even for "simple" changes, MAINTENANCE.md requirements must be followed
+2. **Read repository standards first** - MAINTENANCE.md, CONTRIBUTING.md, CLAUDE.md contain critical workflow requirements
+3. **Version bumps are part of the workflow** - Not a post-merge cleanup, but a pre-PR requirement
+4. **Semantic versioning is automatic** - Commit message convention determines bump type
+5. **Test the complete workflow** - A "successful" PR merge doesn't mean the workflow was correct
+
+### Prevention
+
+**For AI agents executing /git:submit-pr:**
+- ALWAYS run documentation compliance check (Step 5 in workflow)
+- ALWAYS read MAINTENANCE.md as part of repository standards
+- NEVER skip version bump requirements
+- Create version bump commit BEFORE pushing feature branch
+- Validate version was bumped in PR summary
+
+**For workflow implementation:**
+- Add explicit version bump step between "commit changes" and "push to remote"
+- Make version bumping automatic based on commit message analysis
+- Fail the workflow if version bump is required but not performed
+- Add version bump validation to documentation compliance check
+
+**Example check in documentation compliance:**
+```python
+# Check if plugins were modified
+changed_plugins = get_changed_plugins()
+
+if changed_plugins:
+    # Analyze commits to determine bump type
+    bump_type = analyze_commits_for_version_bump()
+
+    # Bump versions for affected plugins
+    for plugin in changed_plugins:
+        bump_plugin_version(plugin, bump_type)
+
+    # Create version bump commit
+    git_commit("chore: bump plugin versions")
+```
+
 ## DevContainer Setup: Using Official Features Instead of Custom Scripts (2025-10-22)
 
 ### Issue
