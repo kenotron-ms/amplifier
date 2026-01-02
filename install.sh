@@ -51,43 +51,6 @@ else
 fi
 
 echo ""
-echo "🎉 Plugins installed successfully!"
-echo ""
-
-# Configure CLAUDE.md to import Amplifier guidance
-echo "📝 Configuring CLAUDE.md..."
-
-CLAUDE_FILE="CLAUDE.md"
-AMP_IMPORT="# Amplifier Plugin Guidance
-@plugins/amp/AMP_GUIDANCE.md"
-
-if [ -f "$CLAUDE_FILE" ]; then
-    # Check if already configured
-    if grep -q "@plugins/amp/AMP_GUIDANCE.md" "$CLAUDE_FILE"; then
-        echo "   ✅ CLAUDE.md already configured for Amplifier"
-    else
-        # Add import at the beginning of the file
-        echo "$AMP_IMPORT
-
-$(cat $CLAUDE_FILE)" > "$CLAUDE_FILE"
-        echo "   ✅ Added Amplifier import to existing CLAUDE.md"
-    fi
-else
-    # Create new CLAUDE.md with Amplifier import
-    cat > "$CLAUDE_FILE" << 'EOF'
-# CLAUDE.md
-
-# Amplifier Plugin Guidance
-@plugins/amp/AMP_GUIDANCE.md
-
-# Project-Specific Instructions
-
-Add your project-specific guidance below...
-EOF
-    echo "   ✅ Created CLAUDE.md with Amplifier import"
-fi
-
-echo ""
 echo "🎉 Installation complete!"
 echo ""
 echo "Available commands:"
@@ -95,7 +58,7 @@ echo "  /amp:*        - Core Amplifier commands and agents"
 echo "  /git:*        - Git workflow helpers"
 echo "  /dev-kit:*    - Feature development SDLC workflow"
 echo ""
-echo "📚 Your CLAUDE.md has been configured to import Amplifier guidance."
-echo "   Edit CLAUDE.md to add project-specific instructions."
+echo "📚 Plugin guidance is automatically loaded from installed plugins."
+echo "   Edit your CLAUDE.md to add project-specific instructions."
 echo ""
 echo "For more info: https://github.com/kenotron-ms/amplifier"
