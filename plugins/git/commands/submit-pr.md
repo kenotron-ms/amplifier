@@ -55,7 +55,31 @@ gh pr <subcommand> $REPO_FLAG [other args]
 
 Follow these steps in order:
 
-### Step 0: Safety Check - Verify PR Target Branch
+### Step 0: Initialize Progress Tracking
+
+**Create a todo list to track the PR submission workflow:**
+
+Use the TodoWrite tool to create the master task list:
+
+```json
+{
+  "todos": [
+    {"content": "Verify PR safety configuration", "status": "pending", "activeForm": "Verifying PR safety configuration"},
+    {"content": "Check git state and branch", "status": "pending", "activeForm": "Checking git state and branch"},
+    {"content": "Commit any uncommitted changes", "status": "pending", "activeForm": "Committing uncommitted changes"},
+    {"content": "Merge latest changes from base branch", "status": "pending", "activeForm": "Merging latest changes from base branch"},
+    {"content": "Ensure documentation compliance", "status": "pending", "activeForm": "Ensuring documentation compliance"},
+    {"content": "Push branch to remote", "status": "pending", "activeForm": "Pushing branch to remote"},
+    {"content": "Create pull request", "status": "pending", "activeForm": "Creating pull request"},
+    {"content": "Monitor PR until ready to merge", "status": "pending", "activeForm": "Monitoring PR until ready to merge"},
+    {"content": "Clean up after merge", "status": "pending", "activeForm": "Cleaning up after merge"}
+  ]
+}
+```
+
+**Mark the first task as in_progress before proceeding.**
+
+### Step 1: Safety Check - Verify PR Target Branch
 
 **CRITICAL: Check for repository-specific PR restrictions before proceeding**
 
@@ -123,7 +147,9 @@ fi
 
 **If the safety check fails, the command MUST exit immediately and NOT proceed with PR creation.**
 
-### Step 1: Verify Git State and Create Branch if Needed
+**After completing safety check, mark the task as completed and mark the next task as in_progress.**
+
+### Step 2: Verify Git State and Create Branch if Needed
 
 Run these commands to understand the current state:
 ```bash
@@ -160,7 +186,9 @@ echo "Current branch: $CURRENT_BRANCH"
 
 3. **If already on a feature branch with no changes, proceed to compliance check**
 
-### Step 2: Handle Uncommitted Changes
+**After completing git state check, mark task as completed and mark the next relevant task as in_progress.**
+
+### Step 3: Handle Uncommitted Changes
 
 If there are uncommitted changes:
 
@@ -181,7 +209,9 @@ If there are uncommitted changes:
    - Write a concise, descriptive commit message following conventional commits format
    - Create the commit immediately (no confirmation needed)
 
-### Step 3: Pull Latest Changes and Resolve Merge Conflicts
+**After creating commit (or skipping if no changes), mark task as completed and mark the next task as in_progress.**
+
+### Step 4: Pull Latest Changes and Resolve Merge Conflicts
 
 **This step ensures the branch is up-to-date with the base branch before PR submission.**
 
@@ -446,7 +476,109 @@ If there are uncommitted changes:
    exit 1
    ```
 
-### Step 4: Ensure Documentation Compliance (Automatic)
+**After completing merge (or skipping if up-to-date), mark task as completed and mark the next task as in_progress.**
+
+### Step 5: Parallel Task Execution - Documentation & PR Standards
+
+**OPTIMIZATION: Run independent tasks in parallel using multiple agents**
+
+This step launches multiple general-purpose agents in parallel to handle independent tasks simultaneously:
+
+1. **Documentation compliance check** (Agent 1)
+2. **PR standards discovery** (Agent 2)
+
+**Launch both agents in a SINGLE message with MULTIPLE Task tool calls:**
+
+```
+Use TWO Task tool invocations with `subagent_type: 'general-purpose'` in parallel
+```
+
+**Agent 1 Prompt - Documentation Compliance:**
+[Use the exact prompt from the original Step 4: Ensure Documentation Compliance]
+
+**Agent 2 Prompt - PR Standards Discovery:**
+```
+TASK: Discover and analyze repository PR standards
+
+YOUR MISSION:
+
+1. **Read documentation standards files:**
+   ```bash
+   cd "$PROJECT_DIR"
+   # Find and read CONTRIBUTING.md, MAINTENANCE.md, CLAUDE.md
+   ```
+
+2. **Analyze recent merged PRs for patterns:**
+   ```bash
+   gh pr list $REPO_FLAG --state merged --limit 5 --json title,body,number
+   ```
+
+3. **Identify PR formatting patterns:**
+   - Title format (conventional commits: "feat:", "fix:", "docs:", etc.)
+   - Common description sections
+   - Required information in PR body
+   - Testing requirements
+   - Review processes
+
+4. **Extract PR template if it exists:**
+   ```bash
+   # Check for PR template
+   if [[ -f ".github/pull_request_template.md" ]]; then
+     cat .github/pull_request_template.md
+   elif [[ -f ".github/PULL_REQUEST_TEMPLATE.md" ]]; then
+     cat .github/PULL_REQUEST_TEMPLATE.md
+   fi
+   ```
+
+5. **Report findings in this EXACT format:**
+   ```
+   PR STANDARDS DISCOVERY: [COMPLETE|FAILED]
+
+   TITLE FORMAT:
+   - Pattern: {describe the pattern found, e.g., "feat: description" or "[Component] Description"}
+   - Examples: {list 2-3 examples from recent PRs}
+
+   DESCRIPTION STRUCTURE:
+   - Required sections: {list sections like "## Summary", "## Changes", "## Testing"}
+   - Optional sections: {list any optional sections}
+   - Template found: [Yes|No]
+
+   TESTING REQUIREMENTS:
+   - Test plan required: [Yes|No]
+   - Verification steps: {describe what's typically included}
+
+   RECENT PR EXAMPLES:
+   - PR #{number}: {title}
+     Body structure: {brief summary of how body was structured}
+
+   RECOMMENDATIONS:
+   - Title: {suggest a title format based on current changes}
+   - Body: {suggest key sections to include based on repository standards}
+   ```
+
+CRITICAL RULES:
+- Analyze actual PR examples, don't guess
+- If no clear pattern, report that and provide fallback suggestions
+- Be concise but thorough
+```
+
+**After BOTH agents complete, process their outputs:**
+
+1. **Handle Documentation Compliance result** (from Agent 1):
+   - If changes were made, commit them
+   - If compliance failed, exit with error
+
+2. **Store PR Standards result** (from Agent 2):
+   - Save the discovered standards for use in PR creation
+   - Use the title/body recommendations when creating the PR
+
+**Mark documentation compliance task as completed.**
+
+### Step 6: Push to Remote
+
+**Mark the "Push branch to remote" task as in_progress.**
+
+### Step 4: Ensure Documentation Compliance (Automatic - DEPRECATED IN FAVOR OF PARALLEL EXECUTION IN STEP 5)
 
 **This step ALWAYS runs to ensure documentation is never out of sync with code changes.**
 
@@ -612,20 +744,9 @@ Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.co
    exit 1
    ```
 
-### Step 5: Push to Remote
+**After pushing to remote, mark task as completed and mark "Create pull request" as in_progress.**
 
-1. Check if the branch exists on remote:
-   ```bash
-   cd "$PROJECT_DIR"
-   git ls-remote --heads origin $(git branch --show-current)
-   ```
-
-2. Push the branch:
-   ```bash
-   git push -u origin $(git branch --show-current)
-   ```
-
-### Step 6: Discover Repository PR Standards
+### Step 7: Discover Repository PR Standards (DEPRECATED - NOW PART OF STEP 5 PARALLEL EXECUTION)
 
 Before creating the PR, discover repository-specific PR title and description standards:
 
@@ -642,7 +763,9 @@ Before creating the PR, discover repository-specific PR title and description st
    - Common description sections
    - PR body structure
 
-### Step 7: Create Pull Request
+### Step 8: Create Pull Request
+
+**Use the PR standards discovered in Step 5 (Agent 2) to format the PR title and body.**
 
 1. Check if a PR already exists for this branch:
    ```bash
@@ -689,9 +812,11 @@ Before creating the PR, discover repository-specific PR title and description st
    fi
    ```
 
-4. **After PR is created, IMMEDIATELY proceed to Step 8** - do NOT ask the user what to do next, do NOT pause, do NOT provide options. The workflow is fully autonomous.
+4. **After PR is created, IMMEDIATELY proceed to Step 9** - do NOT ask the user what to do next, do NOT pause, do NOT provide options. The workflow is fully autonomous.
 
-### Step 8: Monitor PR Status Until Ready or Issues Detected
+**Mark "Create pull request" as completed and mark "Monitor PR until ready to merge" as in_progress.**
+
+### Step 9: Monitor PR Status Until Ready or Issues Detected
 
 **CRITICAL: This step ALWAYS runs immediately after Step 7 - NO USER CONFIRMATION NEEDED**
 
@@ -701,8 +826,8 @@ After PR creation, IMMEDIATELY begin monitoring the PR status by repeatedly chec
 
 **Your mission**: Keep checking the PR status every 30 seconds until one of these conditions is met:
 
-1. **PR is merged** → Report success and proceed to Step 8 (cleanup)
-2. **PR has failed CI checks, change requests, or merge conflicts** → Proceed to Step 7a (fix issues), maximum 3 attempts
+1. **PR is merged** → Report success and proceed to Step 10 (cleanup)
+2. **PR has failed CI checks, change requests, or merge conflicts** → Proceed to Step 9a (fix issues), maximum 3 attempts
 3. **PR is closed without merging** → Report failure and exit
 
 **How to monitor**:
@@ -726,14 +851,14 @@ After PR creation, IMMEDIATELY begin monitoring the PR status by repeatedly chec
 - What we're waiting for (approval, checks, conflict resolution, or ready to merge)
 
 **Exit conditions**:
-- ✅ **MERGED**: PR successfully merged → go to Step 9
-- ⚠️  **Failed checks, changes requested, or conflicts**: → go to Step 8a (up to 3 times)
+- ✅ **MERGED**: PR successfully merged → go to Step 10
+- ⚠️  **Failed checks, changes requested, or conflicts**: → go to Step 9a (up to 3 times)
 - ❌ **CLOSED**: PR closed without merging → exit with error
 - 🎉 **All checks passed + no conflicts**:
-  - If `AUTO_MERGE_ENABLED=true`: Wait for GitHub auto-merge → go to Step 9
-  - If `AUTO_MERGE_ENABLED=false`: Merge manually → go to Step 8b
+  - If `AUTO_MERGE_ENABLED=true`: Wait for GitHub auto-merge → go to Step 10
+  - If `AUTO_MERGE_ENABLED=false`: Merge manually → go to Step 9b
 
-### Step 8a: Autonomously Address PR Issues
+### Step 9a: Autonomously Address PR Issues
 
 **This step only runs if failures or change requests were detected in Step 8**
 
@@ -910,10 +1035,10 @@ else
 fi
 ```
 
-**After fixes are pushed, automatically return to Step 8** to continue monitoring. This creates an autonomous loop:
+**After fixes are pushed, automatically return to Step 9** to continue monitoring. This creates an autonomous loop:
 - Monitor → Detect issues → Fix issues → Push → Monitor → Detect passing → Merge
 
-### Step 8b: Manual Merge When Checks Pass
+### Step 9b: Manual Merge When Checks Pass
 
 **This step only runs if auto-merge is not enabled/available AND all checks have passed**
 
@@ -927,9 +1052,11 @@ When auto-merge is not available in the repository but all checks are green and 
 
 4. **If merge fails**: Report the error and provide the PR URL for manual intervention
 
-After successful merge, proceed to Step 9 for cleanup.
+After successful merge, proceed to Step 10 for cleanup.
 
-### Step 9: Cleanup After Merge
+### Step 10: Cleanup After Merge
+
+**Mark "Monitor PR until ready to merge" as completed and mark "Clean up after merge" as in_progress.**
 
 **This step runs after the PR has been merged (either via GitHub auto-merge or manual merge in Step 8b)**
 
@@ -954,7 +1081,9 @@ Once the PR is confirmed as merged, clean up the local workspace:
 - Confirmation that you're back on base branch
 - Latest changes pulled
 
-### Step 10: Report Final Result
+**Mark "Clean up after merge" as completed. All tasks in the todo list should now be completed.**
+
+### Step 11: Report Final Result
 
 Show the user:
 - PR URL
