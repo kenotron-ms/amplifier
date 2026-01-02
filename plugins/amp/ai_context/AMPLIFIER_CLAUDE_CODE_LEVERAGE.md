@@ -270,24 +270,23 @@ This hook demonstrates:
 - **Graceful degradation**: Fails silently if modules unavailable
 - **Automatic context loading**: Retrieves relevant memories at session start
 
-### Tool Infrastructure
+### Hook Infrastructure
 
-The `.claude/tools/` directory contains the automation backbone:
+The plugin provides hooks (configured in `plugins/amp/hooks.json`) that create an automation backbone:
 
 #### Python Hooks
 - **hook_session_start.py**: Memory system initialization
 - **hook_stop.py**: Session cleanup and state saving
 - **hook_post_tool_use.py**: Universal tool usage tracking
-- **subagent-logger.py**: Logs all subagent interactions to `.data/subagents-logs`
+- **subagent-logger.py**: Logs all subagent interactions to `.claude/logs/subagent-logs/`
 - **on_notification_hook.py**: Desktop notification handler
-- **memory_cli.py**: Command-line interface for memory operations
+- **hook_precompact.py**: Pre-compaction preparation
+- **hook_logger.py**: Centralized logging utility
 
 #### Shell Scripts
 - **on_code_change_hook.sh**: Runs quality checks after code modifications
-- **make-check.sh**: Intelligent quality check runner
-- **notify.sh**: Cross-platform desktop notifications
 
-These tools create an **invisible automation layer** that ensures quality and tracking without cognitive overhead.
+These hooks create an **invisible automation layer** that ensures quality and tracking without cognitive overhead.
 
 ## Integration Patterns: Synergistic Orchestration
 

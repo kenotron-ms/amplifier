@@ -49,7 +49,7 @@ MEMORY_STORAGE_DIR=.data/memories
 
 ### Components
 
-1. **Claude Code Hooks** (`.claude/tools/`)
+1. **Claude Code Hooks** (`plugins/amp/hooks/`)
    - `hook_stop.py` - Extracts memories at conversation end
    - `hook_session_start.py` - Retrieves relevant memories at start
    - `hook_post_tool_use.py` - Validates claims against memories

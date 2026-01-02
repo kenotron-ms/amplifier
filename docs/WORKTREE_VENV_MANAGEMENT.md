@@ -31,9 +31,9 @@ The `make check` target now:
 - Unsets `VIRTUAL_ENV` to let `uv` use the local `.venv`
 - Runs all checks using the correct environment
 
-### 3. Make-Check Hook Handles Worktrees
+### 3. Code Change Hook Handles Worktrees
 
-The Claude Code hook (`.claude/tools/make-check.sh`) now:
+The Claude Code hook (`plugins/amp/hooks/on_code_change_hook.sh`) now:
 - Detects when running in a worktree
 - Unsets mismatched `VIRTUAL_ENV` variables
 - Uses the worktree's local `.venv`
@@ -87,7 +87,7 @@ make check
    - `check` target unsets mismatched `VIRTUAL_ENV`
    - Uses `VIRTUAL_ENV=` prefix on `uv run` commands
 
-3. **`.claude/tools/make-check.sh`**:
+3. **`plugins/amp/hooks/on_code_change_hook.sh`**:
    - Added `setup_worktree_env()` function
    - Unsets `VIRTUAL_ENV` when mismatch detected
 
@@ -116,7 +116,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 Make sure you're using the updated Makefile. The fix requires:
 - Updated `tools/create_worktree.py`
 - Updated `Makefile` with VIRTUAL_ENV handling
-- Updated `.claude/tools/make-check.sh`
+- Updated `plugins/amp/hooks/on_code_change_hook.sh`
 
 ### Pyright errors about missing imports
 
