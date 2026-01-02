@@ -1,0 +1,16 @@
+{
+  "name": "git",
+  "version": "1.0.0",
+  "description": "Git workflow helpers for creating PRs and syncing branches with intelligent conflict resolution",
+  "author": {
+    "name": "kenotron-ms"
+  },
+  "commands": [
+    "./commands/commit.md",
+    "./commands/pull.md",
+    "./commands/submit-pr.md"
+  ],
+  "skills": [
+    "./skills/pr-submission"
+  ]
+}
