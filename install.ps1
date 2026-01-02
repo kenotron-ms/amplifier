@@ -56,46 +56,6 @@ try {
 }
 
 Write-Host ""
-Write-Host "🎉 Plugins installed successfully!" -ForegroundColor Green
-Write-Host ""
-
-# Configure CLAUDE.md to import Amplifier guidance
-Write-Host "📝 Configuring CLAUDE.md..." -ForegroundColor Yellow
-
-$claudeFile = "CLAUDE.md"
-$ampImport = @"
-# Amplifier Plugin Guidance
-@plugins/amp/AMP_GUIDANCE.md
-"@
-
-if (Test-Path $claudeFile) {
-    # Check if already configured
-    $content = Get-Content $claudeFile -Raw
-    if ($content -match "@plugins/amp/AMP_GUIDANCE\.md") {
-        Write-Host "   ✅ CLAUDE.md already configured for Amplifier" -ForegroundColor Green
-    } else {
-        # Add import at the beginning
-        $newContent = $ampImport + "`n`n" + $content
-        Set-Content -Path $claudeFile -Value $newContent
-        Write-Host "   ✅ Added Amplifier import to existing CLAUDE.md" -ForegroundColor Green
-    }
-} else {
-    # Create new CLAUDE.md with Amplifier import
-    $newClaudeMd = @"
-# CLAUDE.md
-
-# Amplifier Plugin Guidance
-@plugins/amp/AMP_GUIDANCE.md
-
-# Project-Specific Instructions
-
-Add your project-specific guidance below...
-"@
-    Set-Content -Path $claudeFile -Value $newClaudeMd
-    Write-Host "   ✅ Created CLAUDE.md with Amplifier import" -ForegroundColor Green
-}
-
-Write-Host ""
 Write-Host "🎉 Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Available commands:"
@@ -103,7 +63,7 @@ Write-Host "  /amp:*        - Core Amplifier commands and agents"
 Write-Host "  /git:*        - Git workflow helpers"
 Write-Host "  /dev-kit:*    - Feature development SDLC workflow"
 Write-Host ""
-Write-Host "📚 Your CLAUDE.md has been configured to import Amplifier guidance."
-Write-Host "   Edit CLAUDE.md to add project-specific instructions."
+Write-Host "📚 Plugin guidance is automatically loaded from installed plugins."
+Write-Host "   Edit your CLAUDE.md to add project-specific instructions."
 Write-Host ""
 Write-Host "For more info: https://github.com/kenotron-ms/amplifier"
