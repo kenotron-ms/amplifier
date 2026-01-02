@@ -1,6 +1,6 @@
 {
   "name": "dev-kit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Software Development Lifecycle toolkit with commands for feature development, bug fixes, and engineering workflows",
   "author": {
     "name": "johannao76"
