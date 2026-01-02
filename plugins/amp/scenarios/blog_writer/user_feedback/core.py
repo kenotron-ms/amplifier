@@ -30,12 +30,8 @@ class ParsedFeedback(BaseModel):
 
     has_feedback: bool = Field(description="Whether user provided feedback")
     is_approved: bool = Field(description="Whether user approved the draft")
-    general_comments: list[str] = Field(
-        default_factory=list, description="General feedback"
-    )
-    specific_requests: list[FeedbackItem] = Field(
-        default_factory=list, description="[Bracket] requests with context"
-    )
+    general_comments: list[str] = Field(default_factory=list, description="General feedback")
+    specific_requests: list[FeedbackItem] = Field(default_factory=list, description="[Bracket] requests with context")
     continue_iteration: bool = Field(description="Whether to continue iterating")
 
 
@@ -84,9 +80,7 @@ class UserFeedbackHandler:
                     )
 
             if feedback_items:
-                logger.info(
-                    f"Found {len(feedback_items)} bracketed comments with context"
-                )
+                logger.info(f"Found {len(feedback_items)} bracketed comments with context")
             else:
                 logger.info("No bracketed comments found in file")
 
@@ -210,9 +204,7 @@ class UserFeedbackHandler:
         else:
             logger.info("No feedback provided")
 
-    def format_feedback_for_revision(
-        self, parsed_feedback: dict[str, Any]
-    ) -> dict[str, Any]:
+    def format_feedback_for_revision(self, parsed_feedback: dict[str, Any]) -> dict[str, Any]:
         """Format parsed feedback for blog revision.
 
         Args:
@@ -231,9 +223,7 @@ class UserFeedbackHandler:
 
                 if item.get("context_before"):
                     context_str.append("Context before:")
-                    context_str.extend(
-                        f"  {line}" for line in item["context_before"] if line.strip()
-                    )
+                    context_str.extend(f"  {line}" for line in item["context_before"] if line.strip())
                     context_str.append("")
 
                 context_str.append(f">>> USER FEEDBACK: [{item['comment']}]")
@@ -242,9 +232,7 @@ class UserFeedbackHandler:
 
                 if item.get("context_after"):
                     context_str.append("Context after:")
-                    context_str.extend(
-                        f"  {line}" for line in item["context_after"] if line.strip()
-                    )
+                    context_str.extend(f"  {line}" for line in item["context_after"] if line.strip())
 
                 formatted_requests.append("\n".join(context_str))
 

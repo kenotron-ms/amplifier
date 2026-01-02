@@ -23,12 +23,8 @@ class SourceReview(BaseModel):
 
     accuracy_score: float = Field(description="Overall accuracy score 0-1")
     has_issues: bool = Field(description="Whether issues were found")
-    issues: list[str] = Field(
-        default_factory=list, description="List of accuracy issues"
-    )
-    suggestions: list[str] = Field(
-        default_factory=list, description="Improvement suggestions"
-    )
+    issues: list[str] = Field(default_factory=list, description="List of accuracy issues")
+    suggestions: list[str] = Field(default_factory=list, description="Improvement suggestions")
     needs_revision: bool = Field(description="Whether revision is required")
 
 
@@ -59,9 +55,7 @@ class SourceReviewer:
         source_sections = [f"=== ORIGINAL IDEA/BRAIN DUMP ===\n{original_brain_dump}"]
 
         if additional_instructions:
-            source_sections.append(
-                f"\n=== ADDITIONAL INSTRUCTIONS ===\n{additional_instructions}"
-            )
+            source_sections.append(f"\n=== ADDITIONAL INSTRUCTIONS ===\n{additional_instructions}")
 
         # Add ALL user feedback as valid source
         if user_feedback_history:
@@ -69,9 +63,7 @@ class SourceReviewer:
             for i, feedback in enumerate(user_feedback_history, 1):
                 if feedback.get("specific_requests"):
                     iteration = feedback.get("iteration", i)
-                    feedback_text.append(
-                        f"\n--- User Feedback (Iteration {iteration}) ---"
-                    )
+                    feedback_text.append(f"\n--- User Feedback (Iteration {iteration}) ---")
                     for item in feedback["specific_requests"]:
                         # Handle both old (string) and new (FeedbackItem dict) formats
                         if isinstance(item, dict):
@@ -82,10 +74,7 @@ class SourceReviewer:
                             feedback_text.append(f"[{item}]")
 
             if feedback_text:
-                source_sections.append(
-                    "\n=== USER FEEDBACK (PART OF VALID SOURCE) ===\n"
-                    + "\n".join(feedback_text)
-                )
+                source_sections.append("\n=== USER FEEDBACK (PART OF VALID SOURCE) ===\n" + "\n".join(feedback_text))
 
         comprehensive_source = "\n".join(source_sections)
 
@@ -140,9 +129,7 @@ Return JSON with:
                 )
 
                 if parsed is None:
-                    logger.error(
-                        "Could not get source review after retries, using default"
-                    )
+                    logger.error("Could not get source review after retries, using default")
                     return self._default_review()
 
                 # Validate and structure response
@@ -153,17 +140,12 @@ Return JSON with:
                 # Convert dict items to strings if needed
                 if issues and isinstance(issues[0], dict):
                     issues = [
-                        item.get("description", str(item))
-                        if isinstance(item, dict)
-                        else str(item)
-                        for item in issues
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item) for item in issues
                     ]
 
                 if suggestions and isinstance(suggestions[0], dict):
                     suggestions = [
-                        item.get("description", str(item))
-                        if isinstance(item, dict)
-                        else str(item)
+                        item.get("description", str(item)) if isinstance(item, dict) else str(item)
                         for item in suggestions
                     ]
 
@@ -177,16 +159,12 @@ Return JSON with:
 
                 # Force needs_revision if accuracy too low or issues found
                 if review_data["accuracy_score"] < 0.8:
-                    logger.info(
-                        f"Accuracy score {review_data['accuracy_score']:.2f} < 0.8, forcing revision"
-                    )
+                    logger.info(f"Accuracy score {review_data['accuracy_score']:.2f} < 0.8, forcing revision")
                     review_data["needs_revision"] = True
                     review_data["has_issues"] = True
 
                 if review_data["issues"] and len(review_data["issues"]) > 0:
-                    logger.info(
-                        f"Found {len(review_data['issues'])} issues, forcing revision"
-                    )
+                    logger.info(f"Found {len(review_data['issues'])} issues, forcing revision")
                     review_data["needs_revision"] = True
                     review_data["has_issues"] = True
 
@@ -214,9 +192,7 @@ Return JSON with:
 
         # Log thresholds
         logger.info("  Threshold: 0.8 (revision if below)")
-        logger.info(
-            f"  Pass/Fail: {'FAIL - Revision Required' if review.needs_revision else 'PASS'}"
-        )
+        logger.info(f"  Pass/Fail: {'FAIL - Revision Required' if review.needs_revision else 'PASS'}")
 
         if review.has_issues:
             logger.warning(f"\nFound {len(review.issues)} accuracy issues:")

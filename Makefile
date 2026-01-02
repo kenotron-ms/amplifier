@@ -1,13 +1,9 @@
 # Workspace Makefile
 
-# Include the recursive system
-repo_root = $(shell git rev-parse --show-toplevel)
-include $(repo_root)/tools/makefiles/recursive.mk
-
 # Helper function to list discovered projects
 define list_projects
-	@echo "Projects discovered: $(words $(MAKE_DIRS))"
-	@for dir in $(MAKE_DIRS); do echo "  - $$dir"; done
+	@echo "Projects discovered: 1"
+	@echo "  - amplifier"
 	@echo ""
 endef
 
@@ -184,7 +180,7 @@ check: ## Format, lint, and type-check all code
 	@echo "Type-checking code with pyright..."
 	@VIRTUAL_ENV= uv run pyright
 	@echo "Checking for stubs and placeholders..."
-	@python tools/check_stubs.py
+	@python plugins/amp/tools/check_stubs.py
 	@echo "All checks passed!"
 
 test: ## Run all tests

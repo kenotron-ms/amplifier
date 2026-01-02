@@ -52,10 +52,7 @@ class TranscriptFormatter:
             return "System"
 
         # Check if this is a legacy subagent session (entire session is subagent conversation)
-        if (
-            hasattr(self.session_data, "session_type")
-            and self.session_data.session_type == "legacy_subagent"
-        ):
+        if hasattr(self.session_data, "session_type") and self.session_data.session_type == "legacy_subagent":
             if msg.type == "user":
                 return "Claude (delegating)"
             if msg.type == "assistant":
@@ -68,9 +65,7 @@ class TranscriptFormatter:
                 return "Claude (delegating)"
             if msg.type == "assistant":
                 # Try to get agent name from session data if available
-                agent_name = (
-                    getattr(self.session_data, "subagent_name", None) or "Unknown Agent"
-                )
+                agent_name = getattr(self.session_data, "subagent_name", None) or "Unknown Agent"
                 return f"Subagent ({agent_name})"
 
         # Regular session attribution
@@ -221,17 +216,9 @@ class TranscriptFormatter:
             lines.append(f"- **Modified**: {dt.strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
         # Add session type if not regular
-        if (
-            hasattr(self.session_data, "session_type")
-            and self.session_data.session_type != "regular"
-        ):
+        if hasattr(self.session_data, "session_type") and self.session_data.session_type != "regular":
             # Get the string value of the enum
-            session_type_str = (
-                str(self.session_data.session_type)
-                .split(".")[-1]
-                .replace("_", " ")
-                .title()
-            )
+            session_type_str = str(self.session_data.session_type).split(".")[-1].replace("_", " ").title()
             lines.append(f"- **Session Type**: {session_type_str}")
             if self.session_data.subagent_name:
                 lines.append(f"- **Subagent**: {self.session_data.subagent_name}")
@@ -252,14 +239,10 @@ class TranscriptFormatter:
         for branch in self.tree.branches.values():
             indent = "  " if branch.is_sidechain else ""
             branch_type = "Sidechain" if branch.is_sidechain else "Branch"
-            lines.append(
-                f"{indent}- **{branch_type}** `{branch.branch_id}`: {branch.count_messages()} messages"
-            )
+            lines.append(f"{indent}- **{branch_type}** `{branch.branch_id}`: {branch.count_messages()} messages")
 
             if branch.child_branches:
-                lines.append(
-                    f"{indent}  - Children: {', '.join(branch.child_branches)}"
-                )
+                lines.append(f"{indent}  - Children: {', '.join(branch.child_branches)}")
 
         return lines
 
@@ -432,9 +415,7 @@ class TranscriptFormatter:
             # Check if it's a Task tool (sub-agent)
             if name == "Task" and "subagent_type" in input_data:
                 subagent = input_data.get("subagent_type", "unknown")
-                task = input_data.get(
-                    "prompt", input_data.get("task", "No task description")
-                )
+                task = input_data.get("prompt", input_data.get("task", "No task description"))
                 return f"**Sub-agent Task**\n- Agent: `{subagent}`\n- Task: {task}"
 
             # Format as code block for complex inputs
