@@ -1,91 +1,94 @@
 {
-  "SessionStart": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/hook_session_start.py",
-          "timeout": 10000
-        },
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/marketplace_update.py",
-          "timeout": 30000
-        }
-      ]
-    }
-  ],
-  "Stop": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/hook_stop.py"
-        }
-      ]
-    }
-  ],
-  "SubagentStop": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/hook_stop.py"
-        }
-      ]
-    }
-  ],
-  "PreToolUse": [
-    {
-      "matcher": "Task",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/subagent-logger.py"
-        }
-      ]
-    }
-  ],
-  "PostToolUse": [
-    {
-      "matcher": "Edit|MultiEdit|Write",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/on_code_change_hook.sh"
-        }
-      ]
-    },
-    {
-      "matcher": "*",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/hook_post_tool_use.py"
-        }
-      ]
-    }
-  ],
-  "Notification": [
-    {
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/on_notification_hook.py"
-        }
-      ]
-    }
-  ],
-  "PreCompact": [
-    {
-      "matcher": "*",
-      "hooks": [
-        {
-          "type": "command",
-          "command": "$CLAUDE_PLUGIN_DIR/hooks/hook_precompact.py",
-          "timeout": 30000
-        }
-      ]
-    }
-  ]
+  "description": "Amplifier plugin hooks for session management, logging, and code quality",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/hook_session_start.py",
+            "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/marketplace_update.py",
+            "timeout": 30000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/hook_stop.py"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/hook_stop.py"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/subagent-logger.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/on_code_change_hook.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/hook_post_tool_use.py"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/on_notification_hook.py"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/hook_precompact.py",
+            "timeout": 30000
+          }
+        ]
+      }
+    ]
+  }
 }
