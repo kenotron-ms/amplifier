@@ -67,7 +67,28 @@ uv run python ${CLAUDE_PLUGIN_ROOT}/tools/transcript_manager.py restore
 # The content automatically becomes part of the conversation
 ```
 
-**WHY THIS MATTERS**: The entire purpose of this tool is to inject transcript content into the conversation context. Redirecting or piping the output defeats this purpose entirely!
+### 🔴 CRITICAL: DO NOT CHANGE DIRECTORY 🔴
+
+**NEVER do this:**
+```bash
+# WRONG - Changes CWD away from project
+cd /path/to/plugin/cache && uv run python tools/transcript_manager.py restore
+cd ${CLAUDE_PLUGIN_ROOT} && uv run python tools/transcript_manager.py restore
+```
+
+**ALWAYS do this:**
+```bash
+# CORRECT - Stay in project directory, use absolute path to tool
+uv run python ${CLAUDE_PLUGIN_ROOT}/tools/transcript_manager.py restore
+
+# The ${CLAUDE_PLUGIN_ROOT} variable provides the absolute path
+# No cd command needed - uv run works from any directory
+```
+
+**WHY THIS MATTERS**:
+1. The tool outputs content that must inject into conversation context - redirecting prevents this
+2. The tool needs to find `.data/transcripts/` in the PROJECT directory, not the plugin cache
+3. Changing to plugin cache breaks relative path resolution for project files
 
 ## Implementation Approach
 
