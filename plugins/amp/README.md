@@ -161,6 +161,13 @@ Commands will run `uv sync` and `uv run` automatically.
 ```bash
 # Example: transcript_manager.py is at
 ${CLAUDE_PLUGIN_ROOT}/tools/transcript_manager.py
+
+# ✅ CORRECT - Invoke from project directory using absolute path:
+uv run python ${CLAUDE_PLUGIN_ROOT}/tools/transcript_manager.py restore
+
+# 🔴 NEVER use cd to change into plugin cache:
+# WRONG: cd ${CLAUDE_PLUGIN_ROOT} && uv run python tools/transcript_manager.py
+# This breaks relative paths and prevents tools from finding project files
 ```
 
 ### Referencing Philosophies
