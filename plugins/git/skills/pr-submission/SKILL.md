@@ -79,7 +79,6 @@ When the user requests creating or submitting a PR:
 - **Zero confirmations**: The command handles everything automatically
 - **Handles failures**: Automatically fixes CI failures and addresses review feedback
 - **Complete lifecycle**: From uncommitted changes to merged PR
-- **Project directory aware**: Uses PROJECT_DIR environment variable if set
 
 ## What NOT to do
 

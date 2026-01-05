@@ -17,6 +17,42 @@ try {
 }
 Write-Host ""
 
+# Create .claude directory and settings.json with marketplace configuration
+Write-Host "📝 Configuring Claude Code marketplace..." -ForegroundColor Yellow
+New-Item -ItemType Directory -Force -Path ".claude" | Out-Null
+
+$settingsJson = @"
+{
+  "permissions": {
+    "allow": ["Bash", "mcp__playwright", "mcp__deepwiki", "WebFetch", "TodoWrite"],
+    "deny": [],
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [".data", ".vscode", ".claude", ".ai"]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["playwright", "deepwiki"],
+  "extraKnownMarketplaces": {
+    "amplifier": {
+      "source": {
+        "source": "github",
+        "repository": "kenotron-ms/amplifier",
+        "ref": "amplifier-claude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "amp@amplifier": true,
+    "git@amplifier": true,
+    "dev-kit@amplifier": true
+  }
+}
+"@
+
+$settingsJson | Out-File -FilePath ".claude/settings.json" -Encoding UTF8 -NoNewline
+
+Write-Host "✅ Marketplace configuration written to .claude/settings.json" -ForegroundColor Green
+Write-Host ""
+
 # Add Amplifier marketplace (amplifier-claude branch)
 Write-Host "📦 Adding Amplifier marketplace..." -ForegroundColor Yellow
 try {

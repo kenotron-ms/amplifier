@@ -14,19 +14,11 @@ Complete end-to-end PR workflow: automatically creates branches, commits changes
 - **Smart merge**: Uses GitHub auto-merge when available, otherwise merges manually when checks pass
 - **Auto-cleanup**: Cleans up branches after merge completes
 
-## Important: Project Directory
+## Repository-Specific PR Configuration
 
-**All git commands must run in the actual project directory, not the Claude worktree.**
-
-The commands will use `PROJECT_DIR` environment variable if set, otherwise fall back to the current directory (`$PWD`).
-
-**At the start of this command, set PROJECT_DIR and PR_REPO:**
+**Check for .git-pr-config.json to prevent accidental upstream PRs:**
 ```bash
-# Use PROJECT_DIR if set, otherwise use current directory
-PROJECT_DIR="${PROJECT_DIR:-$PWD}"
-echo "Working in: $PROJECT_DIR"
-
-# Check for .git-pr-config.json to prevent accidental upstream PRs
+# Check for .git-pr-config.json at start of command
 if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
   PR_REPO=$(jq -r '.remote.origin // empty' .git-pr-config.json 2>/dev/null)
   if [[ -n "$PR_REPO" ]]; then
@@ -38,12 +30,6 @@ if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
 else
   REPO_FLAG=""
 fi
-```
-
-**Then for all git commands, use:**
-```bash
-cd "$PROJECT_DIR"
-git <command>
 ```
 
 **For all gh pr commands, use:**
@@ -84,7 +70,7 @@ Use the TodoWrite tool to create the master task list:
 **CRITICAL: Check for repository-specific PR restrictions before proceeding**
 
 ```bash
-cd "$PROJECT_DIR"
+
 
 # Check if .git-pr-config.json exists
 if [[ -f ".git-pr-config.json" ]]; then
@@ -158,7 +144,7 @@ fi
 
 Run these commands to understand the current state:
 ```bash
-cd "$PROJECT_DIR"
+
 git status
 CURRENT_BRANCH=$(git branch --show-current)
 git remote -v
@@ -169,7 +155,7 @@ echo "Current branch: $CURRENT_BRANCH"
 
 1. **If on target branch, automatically create a feature branch:**
    ```bash
-   cd "$PROJECT_DIR"
+   
    CURRENT_BRANCH=$(git branch --show-current)
 
    # Determine target branch from config or defaults
@@ -214,7 +200,7 @@ If there are uncommitted changes:
 
 1. Show the user what will be committed:
    ```bash
-   cd "$PROJECT_DIR"
+   
    git diff --stat
    git diff --staged --stat
    ```
@@ -237,7 +223,7 @@ If there are uncommitted changes:
 
 1. **Identify the base branch:**
    ```bash
-   cd "$PROJECT_DIR"
+   
 
    # Check if .git-pr-config.json specifies a target branch
    if [[ -f ".git-pr-config.json" ]] && command -v jq &> /dev/null; then
@@ -264,14 +250,14 @@ If there are uncommitted changes:
 
 2. **Fetch latest changes from remote:**
    ```bash
-   cd "$PROJECT_DIR"
+   
    git fetch origin "$BASE_BRANCH"
    echo "✅ Fetched latest changes from origin/$BASE_BRANCH"
    ```
 
 3. **Check for merge conflicts:**
    ```bash
-   cd "$PROJECT_DIR"
+   
 
    # Try to merge base branch (dry-run first to detect conflicts)
    if git merge-base --is-ancestor origin/"$BASE_BRANCH" HEAD; then
@@ -309,7 +295,7 @@ If there are uncommitted changes:
 
    1. **List all conflicted files:**
       ```bash
-      cd "$PROJECT_DIR"
+      
       git diff --name-only --diff-filter=U
       ```
 
@@ -427,7 +413,7 @@ If there are uncommitted changes:
 
    6. **If all conflicts were simple and resolved, commit the merge:**
       ```bash
-      cd "$PROJECT_DIR"
+      
       git commit -m "merge: resolve conflicts with $BASE_BRANCH
 
    - Merged latest changes from $BASE_BRANCH
@@ -524,7 +510,7 @@ YOUR MISSION:
 
 1. **Read documentation standards files:**
    ```bash
-   cd "$PROJECT_DIR"
+   
    # Find and read CONTRIBUTING.md, MAINTENANCE.md, CLAUDE.md
    ```
 
@@ -604,7 +590,7 @@ CRITICAL RULES:
 
 1. **Find repository documentation standards:**
    ```bash
-   cd "$PROJECT_DIR"
+   
 
    # Use git ls-files to find tracked documentation
    DOCS=$(git ls-files '*.md' | grep -iE 'contributing|maintenance|claude' | grep '\.md$')
@@ -735,7 +721,7 @@ CRITICAL RULES:
    **If COMPLIANCE STATUS: COMPLETE:**
    ```bash
    # Check if agent made any changes
-   cd "$PROJECT_DIR"
+   
    if [[ -n $(git diff --cached) ]]; then
      echo "📝 Committing documentation compliance updates..."
      git commit -m "docs: ensure documentation compliance
@@ -774,7 +760,7 @@ Before creating the PR, discover repository-specific PR title and description st
 
 2. **Analyze recent PRs for patterns:**
    ```bash
-   cd "$PROJECT_DIR"
+   
    gh pr list $REPO_FLAG --state merged --limit 5 --json title,body
    ```
 
@@ -789,7 +775,7 @@ Before creating the PR, discover repository-specific PR title and description st
 
 1. Check if a PR already exists for this branch:
    ```bash
-   cd "$PROJECT_DIR"
+   
    gh pr view $REPO_FLAG --json number,url 2>/dev/null || echo "No existing PR"
    ```
 
@@ -970,7 +956,7 @@ YOUR MISSION:
 
 4. **Commit fixes:**
    ```bash
-   cd "$PROJECT_DIR"
+   
    git add -A
    git commit -m "fix: address PR feedback and CI failures
 
@@ -1034,7 +1020,7 @@ CRITICAL RULES:
 **Process agent response:**
 
 ```bash
-cd "$PROJECT_DIR"
+
 
 # Extract fix status from agent output
 if grep -q "FIX STATUS: COMPLETE" <<< "$AGENT_OUTPUT"; then
@@ -1117,7 +1103,6 @@ Show the user:
 - If `gh` CLI is not installed, inform user and provide installation instructions
 - If not authenticated with GitHub, guide user through `gh auth login`
 - If push fails due to conflicts, suggest running `git pull --rebase` first
-- If PROJECT_DIR is not set, inform user and use current directory as fallback
 - If compliance check fails, stop and report what needs to be fixed
 
 ## Important Notes

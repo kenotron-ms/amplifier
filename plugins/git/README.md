@@ -20,38 +20,6 @@ Git workflow helpers for creating PRs and syncing branches with intelligent conf
 
   It immediately runs `/submit-pr` without asking for confirmation, giving you a fully hands-off experience.
 
-## Project Directory Handling
-
-The git plugin automatically works in the correct project directory:
-
-- **Default**: Uses `$PWD` (current working directory)
-- **Override**: Set `PROJECT_DIR` environment variable to specify a different location
-- **Why**: Ensures git commands run in your actual project, not the Claude worktree
-
-### How It Works
-
-When you run `/pull` or `/submit-pr`, the commands will:
-1. Check if `PROJECT_DIR` is set in your environment
-2. Fall back to `$PWD` (current directory) if not set
-3. Display which directory is being used
-4. Run all git operations in that directory
-
-### Setting PROJECT_DIR (Optional)
-
-If you need to override the default behavior:
-
-```bash
-export PROJECT_DIR="/path/to/your/project"
-```
-
-Or add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
-```bash
-# Auto-set PROJECT_DIR when using amp
-if [ -n "$AMP_WORKSPACE" ]; then
-  export PROJECT_DIR="$PWD"
-fi
-```
-
 ## Usage
 
 ### Syncing with Main

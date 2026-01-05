@@ -142,6 +142,41 @@ install: ## Install all dependencies
 	@echo "Installing workspace dependencies..."
 	uv sync --group dev
 	@echo ""
+	@echo "Verifying Claude Code marketplace configuration..."
+	@if [ ! -f .claude/settings.json ]; then \
+		echo "  Creating .claude/settings.json with marketplace configuration..."; \
+		mkdir -p .claude; \
+		cat > .claude/settings.json <<'EOF'
+{
+  "permissions": {
+    "allow": ["Bash", "mcp__playwright", "mcp__deepwiki", "WebFetch", "TodoWrite"],
+    "deny": [],
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [".data", ".vscode", ".claude", ".ai"]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["playwright", "deepwiki"],
+  "extraKnownMarketplaces": {
+    "amplifier": {
+      "source": {
+        "source": "directory",
+        "path": "."
+      }
+    }
+  },
+  "enabledPlugins": {
+    "amp@amplifier": true,
+    "git@amplifier": true,
+    "dev-kit@amplifier": true
+  }
+}
+EOF
+; \
+	else \
+		echo "  ✓ .claude/settings.json already exists"; \
+	fi
+	@echo "  ✓ Marketplace 'amplifier' configured with project scope"
+	@echo ""
 	@echo "Installing npm packages globally..."
 	@command -v pnpm >/dev/null 2>&1 || { echo "  Installing pnpm..."; npm install -g pnpm; }
 	@pnpm add -g @anthropic-ai/claude-code@latest || { \
