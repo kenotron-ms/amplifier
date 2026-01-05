@@ -16,6 +16,40 @@ fi
 echo "✅ Claude CLI found"
 echo ""
 
+# Create .claude directory and settings.json with marketplace configuration
+echo "📝 Configuring Claude Code marketplace..."
+mkdir -p .claude
+
+cat > .claude/settings.json <<'EOF'
+{
+  "permissions": {
+    "allow": ["Bash", "mcp__playwright", "mcp__deepwiki", "WebFetch", "TodoWrite"],
+    "deny": [],
+    "defaultMode": "bypassPermissions",
+    "additionalDirectories": [".data", ".vscode", ".claude", ".ai"]
+  },
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": ["playwright", "deepwiki"],
+  "extraKnownMarketplaces": {
+    "amplifier": {
+      "source": {
+        "source": "github",
+        "repository": "kenotron-ms/amplifier",
+        "ref": "amplifier-claude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "amp@amplifier": true,
+    "git@amplifier": true,
+    "dev-kit@amplifier": true
+  }
+}
+EOF
+
+echo "✅ Marketplace configuration written to .claude/settings.json"
+echo ""
+
 # Add Amplifier marketplace (amplifier-claude branch)
 echo "📦 Adding Amplifier marketplace..."
 if claude plugin marketplace add https://github.com/kenotron-ms/amplifier#amplifier-claude; then

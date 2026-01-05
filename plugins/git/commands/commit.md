@@ -11,25 +11,6 @@ Create a well-formatted git commit following repository conventions with proper 
 
 **🎯 Smart Standards Discovery**: This command automatically discovers and follows repository-specific commit standards by reading documentation files (`CLAUDE.md`, `CONTRIBUTING.md`, `MAINTENANCE.md`). It adapts commit messages to match each repository's conventions.
 
-## Important: Project Directory
-
-**All git commands must run in the actual project directory, not the Claude worktree.**
-
-The commands will use `PROJECT_DIR` environment variable if set, otherwise fall back to the current directory (`$PWD`).
-
-**At the start of this command, set PROJECT_DIR:**
-```bash
-# Use PROJECT_DIR if set, otherwise use current directory
-PROJECT_DIR="${PROJECT_DIR:-$PWD}"
-echo "Working in: $PROJECT_DIR"
-```
-
-**Then for all git commands, use:**
-```bash
-cd "$PROJECT_DIR"
-git <command>
-```
-
 ## Usage
 
 ```bash
@@ -52,7 +33,6 @@ Follow these steps in order:
 
 Run these commands to understand the current state:
 ```bash
-cd "$PROJECT_DIR"
 git status
 git diff --stat
 git diff --cached --stat
@@ -89,7 +69,6 @@ CLAUDE.md, CONTRIBUTING.md, MAINTENANCE.md. Extract:
 
 **Review git status and diff:**
 ```bash
-cd "$PROJECT_DIR"
 git status --porcelain
 git diff --cached --stat
 git log -5 --oneline  # See recent commit style
@@ -209,21 +188,18 @@ Your choice: _
 
 **If files are already staged:**
 ```bash
-cd "$PROJECT_DIR"
 git diff --cached --name-only
 echo "Files already staged"
 ```
 
 **If no files staged (stage all changes):**
 ```bash
-cd "$PROJECT_DIR"
 git add .
 echo "Staged all changes"
 ```
 
 **Verify what's staged:**
 ```bash
-cd "$PROJECT_DIR"
 git status --short
 ```
 
@@ -231,8 +207,6 @@ git status --short
 
 **Commit with message:**
 ```bash
-cd "$PROJECT_DIR"
-
 # Use heredoc for multi-line messages
 git commit -m "$(cat <<'COMMIT_MSG'
 feat: add user authentication with JWT
@@ -255,7 +229,6 @@ COMMIT_MSG
 If hooks modify files:
 ```bash
 # Check if pre-commit modified files
-cd "$PROJECT_DIR"
 if [ -n "$(git status --porcelain)" ]; then
     echo "⚠️  Pre-commit hooks modified files"
     echo "Modified files:"
@@ -273,7 +246,6 @@ fi
 
 If user chooses to amend:
 ```bash
-cd "$PROJECT_DIR"
 # Check authorship of last commit
 AUTHOR=$(git log -1 --format='%an %ae')
 echo "Last commit author: $AUTHOR"
@@ -295,7 +267,6 @@ fi
 
 **Show commit details:**
 ```bash
-cd "$PROJECT_DIR"
 echo ""
 echo "✓ Commit created successfully!"
 echo ""
@@ -330,8 +301,6 @@ What would you like to do?
 Before committing, scan for potential secrets:
 
 ```bash
-cd "$PROJECT_DIR"
-
 # Check staged files for common secret patterns
 git diff --cached | grep -iE "(password|api_key|secret|token|credential|private_key)" 
 
@@ -362,7 +331,6 @@ Your choice: _
 ### Prevent Committing to Main
 
 ```bash
-cd "$PROJECT_DIR"
 CURRENT_BRANCH=$(git branch --show-current)
 
 if [ "$CURRENT_BRANCH" = "main" ] || [ "$CURRENT_BRANCH" = "master" ]; then
@@ -382,8 +350,6 @@ fi
 ### Large File Warning
 
 ```bash
-cd "$PROJECT_DIR"
-
 # Check for large files (>1MB)
 git diff --cached --name-only | while read file; do
     if [ -f "$file" ]; then

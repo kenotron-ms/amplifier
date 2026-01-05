@@ -2,25 +2,6 @@
 
 Sync your feature branch with the latest changes from origin/main, with intelligent conflict resolution assistance.
 
-## Important: Project Directory
-
-**All git commands must run in the actual project directory, not the Claude worktree.**
-
-The commands will use `PROJECT_DIR` environment variable if set, otherwise fall back to the current directory (`$PWD`).
-
-**At the start of this command, set PROJECT_DIR:**
-```bash
-# Use PROJECT_DIR if set, otherwise use current directory
-PROJECT_DIR="${PROJECT_DIR:-$PWD}"
-echo "Working in: $PROJECT_DIR"
-```
-
-**Then for all git commands, use:**
-```bash
-cd "$PROJECT_DIR"
-git <command>
-```
-
 ## Workflow
 
 Follow these steps in order:
@@ -29,7 +10,6 @@ Follow these steps in order:
 
 Run these commands to understand the situation:
 ```bash
-cd "$PROJECT_DIR"
 git status
 git branch --show-current
 git stash list
@@ -45,7 +25,6 @@ git stash list
 ### Step 2: Fetch Latest from Remote
 
 ```bash
-cd "$PROJECT_DIR"
 git fetch origin main
 ```
 
@@ -60,7 +39,6 @@ If nothing new, inform user they're already up to date.
 
 Prefer rebase over merge for cleaner history:
 ```bash
-cd "$PROJECT_DIR"
 git rebase origin/main
 ```
 
@@ -74,7 +52,6 @@ When conflicts are detected:
 
 1. **List all conflicting files:**
    ```bash
-   cd "$PROJECT_DIR"
    git diff --name-only --diff-filter=U
    ```
 
@@ -111,7 +88,6 @@ When conflicts are detected:
 
 3. **After all conflicts resolved:**
    ```bash
-   cd "$PROJECT_DIR"
    git rebase --continue
    ```
 
@@ -121,7 +97,6 @@ When conflicts are detected:
 
 If changes were stashed in Step 1:
 ```bash
-cd "$PROJECT_DIR"
 git stash pop
 ```
 
@@ -162,4 +137,3 @@ At any point during conflict resolution, offer the user:
 - If rebase gets into a bad state, offer `git rebase --abort` to start fresh
 - If user is confused, explain what rebase does vs merge
 - If there are many conflicts, suggest resolving in batches or considering a merge instead
-- If PROJECT_DIR is not set, inform user and use current directory as fallback
