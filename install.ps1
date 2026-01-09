@@ -35,7 +35,7 @@ $settingsJson = @"
     "amplifier": {
       "source": {
         "source": "github",
-        "repository": "kenotron-ms/amplifier",
+        "repo": "kenotron-ms/amplifier",
         "ref": "amplifier-claude"
       }
     }
