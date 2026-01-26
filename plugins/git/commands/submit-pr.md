@@ -43,27 +43,31 @@ Follow these steps in order:
 
 ### Step 0: Initialize Progress Tracking
 
-**Create a todo list to track the PR submission workflow:**
+**Create a task list to track the PR submission workflow:**
 
-Use the TodoWrite tool to create the master task list:
+Use the TaskCreate tool to create individual tasks for the workflow. Create all tasks with these calls:
 
-```json
-{
-  "todos": [
-    {"content": "Verify PR safety configuration", "status": "pending", "activeForm": "Verifying PR safety configuration"},
-    {"content": "Check git state and branch", "status": "pending", "activeForm": "Checking git state and branch"},
-    {"content": "Commit any uncommitted changes", "status": "pending", "activeForm": "Committing uncommitted changes"},
-    {"content": "Merge latest changes from base branch", "status": "pending", "activeForm": "Merging latest changes from base branch"},
-    {"content": "Ensure documentation compliance", "status": "pending", "activeForm": "Ensuring documentation compliance"},
-    {"content": "Push branch to remote", "status": "pending", "activeForm": "Pushing branch to remote"},
-    {"content": "Create pull request", "status": "pending", "activeForm": "Creating pull request"},
-    {"content": "Monitor PR until ready to merge", "status": "pending", "activeForm": "Monitoring PR until ready to merge"},
-    {"content": "Clean up after merge", "status": "pending", "activeForm": "Cleaning up after merge"}
-  ]
-}
+```
+TaskCreate(subject="Verify PR safety configuration", description="Check .git-pr-config.json and validate PR target branch is allowed", activeForm="Verifying PR safety configuration")
+
+TaskCreate(subject="Check git state and branch", description="Verify current branch, git status, and create feature branch if needed", activeForm="Checking git state and branch")
+
+TaskCreate(subject="Commit any uncommitted changes", description="Stage and commit any uncommitted changes with appropriate commit message", activeForm="Committing uncommitted changes")
+
+TaskCreate(subject="Merge latest changes from base branch", description="Pull and merge latest changes from base branch, resolve conflicts if needed", activeForm="Merging latest changes from base branch")
+
+TaskCreate(subject="Ensure documentation compliance", description="Check and update all documentation per repository standards (CONTRIBUTING.md, MAINTENANCE.md, etc.)", activeForm="Ensuring documentation compliance")
+
+TaskCreate(subject="Push branch to remote", description="Push committed changes to remote repository", activeForm="Pushing branch to remote")
+
+TaskCreate(subject="Create pull request", description="Create PR with appropriate title and description following repository standards", activeForm="Creating pull request")
+
+TaskCreate(subject="Monitor PR until ready to merge", description="Monitor CI checks, reviews, and approval status until PR is ready to merge", activeForm="Monitoring PR until ready to merge")
+
+TaskCreate(subject="Clean up after merge", description="Delete feature branch and switch back to base branch after PR merge", activeForm="Cleaning up after merge")
 ```
 
-**Mark the first task as in_progress before proceeding.**
+**After creating all tasks, use TaskUpdate to mark the first task as in_progress before proceeding.**
 
 ### Step 1: Safety Check - Verify PR Target Branch
 
@@ -138,7 +142,7 @@ fi
 
 **If the safety check fails, the command MUST exit immediately and NOT proceed with PR creation.**
 
-**After completing safety check, mark the task as completed and mark the next task as in_progress.**
+**After completing safety check, use TaskUpdate to mark the current task as completed and mark the next task as in_progress.**
 
 ### Step 2: Verify Git State and Create Branch if Needed
 
@@ -192,7 +196,7 @@ echo "Current branch: $CURRENT_BRANCH"
 
 3. **If already on a feature branch with no changes, proceed to compliance check**
 
-**After completing git state check, mark task as completed and mark the next relevant task as in_progress.**
+**After completing git state check, use TaskUpdate to mark task as completed and mark the next relevant task as in_progress.**
 
 ### Step 3: Handle Uncommitted Changes
 
@@ -215,7 +219,7 @@ If there are uncommitted changes:
    - Write a concise, descriptive commit message following conventional commits format
    - Create the commit immediately (no confirmation needed)
 
-**After creating commit (or skipping if no changes), mark task as completed and mark the next task as in_progress.**
+**After creating commit (or skipping if no changes), use TaskUpdate to mark task as completed and mark the next task as in_progress.**
 
 ### Step 4: Pull Latest Changes and Resolve Merge Conflicts
 
@@ -482,7 +486,7 @@ If there are uncommitted changes:
    exit 1
    ```
 
-**After completing merge (or skipping if up-to-date), mark task as completed and mark the next task as in_progress.**
+**After completing merge (or skipping if up-to-date), use TaskUpdate to mark task as completed and mark the next task as in_progress.**
 
 ### Step 5: Parallel Task Execution - Documentation & PR Standards
 
@@ -578,11 +582,11 @@ CRITICAL RULES:
    - Save the discovered standards for use in PR creation
    - Use the title/body recommendations when creating the PR
 
-**Mark documentation compliance task as completed.**
+**Use TaskUpdate to mark documentation compliance task as completed.**
 
 ### Step 6: Push to Remote
 
-**Mark the "Push branch to remote" task as in_progress.**
+**Use TaskUpdate to mark the "Push branch to remote" task as in_progress.**
 
 ### Step 4: Ensure Documentation Compliance (Automatic - DEPRECATED IN FAVOR OF PARALLEL EXECUTION IN STEP 5)
 
@@ -750,7 +754,7 @@ Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.co
    exit 1
    ```
 
-**After pushing to remote, mark task as completed and mark "Create pull request" as in_progress.**
+**After pushing to remote, use TaskUpdate to mark task as completed and mark "Create pull request" as in_progress.**
 
 ### Step 7: Discover Repository PR Standards (DEPRECATED - NOW PART OF STEP 5 PARALLEL EXECUTION)
 
@@ -820,7 +824,7 @@ Before creating the PR, discover repository-specific PR title and description st
 
 4. **After PR is created, IMMEDIATELY proceed to Step 9** - do NOT ask the user what to do next, do NOT pause, do NOT provide options. The workflow is fully autonomous.
 
-**Mark "Create pull request" as completed and mark "Monitor PR until ready to merge" as in_progress.**
+**Use TaskUpdate to mark "Create pull request" as completed and mark "Monitor PR until ready to merge" as in_progress.**
 
 ### Step 9: Monitor PR Status Until Ready or Issues Detected
 
@@ -1062,7 +1066,7 @@ After successful merge, proceed to Step 10 for cleanup.
 
 ### Step 10: Cleanup After Merge
 
-**Mark "Monitor PR until ready to merge" as completed and mark "Clean up after merge" as in_progress.**
+**Use TaskUpdate to mark "Monitor PR until ready to merge" as completed and mark "Clean up after merge" as in_progress.**
 
 **This step runs after the PR has been merged (either via GitHub auto-merge or manual merge in Step 8b)**
 
@@ -1087,7 +1091,7 @@ Once the PR is confirmed as merged, clean up the local workspace:
 - Confirmation that you're back on base branch
 - Latest changes pulled
 
-**Mark "Clean up after merge" as completed. All tasks in the todo list should now be completed.**
+**Use TaskUpdate to mark "Clean up after merge" as completed. All tasks in the task list should now be completed.**
 
 ### Step 11: Report Final Result
 
